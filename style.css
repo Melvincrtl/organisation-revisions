@@ -7,6 +7,8 @@
   --accent: #2563eb;
   --bordure: #d8dce2;
   --retard: #b91c1c;
+  --pause: #15803d;
+  --alerte-fond: #fef3c7;
 }
 
 /* ===== Base ===== */
@@ -176,4 +178,62 @@ button {
   color: var(--discret);
   border: 1px solid var(--bordure);
   padding: 6px 10px;
+}
+
+/* ===== Minuteur Pomodoro ===== */
+#bloc-minuteur {
+  text-align: center;
+}
+
+.minuteur-phase {
+  margin: 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* En pause, la phase s'affiche en vert */
+#bloc-minuteur.phase-pause .minuteur-phase {
+  color: var(--pause);
+}
+
+.minuteur-temps {
+  margin: 4px 0 12px;
+  font-size: 4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums; /* chiffres de même largeur : le texte ne "saute" pas */
+  line-height: 1.1;
+}
+
+.minuteur-message {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.minuteur-boutons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.minuteur-boutons button {
+  flex: 1;
+  max-width: 200px;
+}
+
+.bouton-secondaire {
+  background: transparent;
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+}
+
+/* Alerte visuelle de fin de période : le bloc clignote en jaune */
+#bloc-minuteur.alerte {
+  animation: clignoter 1s ease-in-out 5;
+  background: var(--alerte-fond);
+}
+
+@keyframes clignoter {
+  50% {
+    background: var(--carte);
+  }
 }

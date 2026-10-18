@@ -11,6 +11,19 @@
   <main>
     <h1>Mes révisions</h1>
 
+    <!-- ===== Bloc : minuteur Pomodoro ===== -->
+    <section class="bloc" id="bloc-minuteur">
+      <h2>Minuteur</h2>
+      <p id="minuteur-phase" class="minuteur-phase">Travail</p>
+      <p id="minuteur-temps" class="minuteur-temps">25:00</p>
+      <!-- Message affiché à la fin d'une période (caché sinon) -->
+      <p id="minuteur-message" class="minuteur-message" hidden></p>
+      <div class="minuteur-boutons">
+        <button type="button" id="bouton-demarrer">Démarrer</button>
+        <button type="button" id="bouton-reinitialiser" class="bouton-secondaire">Réinitialiser</button>
+      </div>
+    </section>
+
     <!-- ===== Bloc : liste de tâches ===== -->
     <section class="bloc">
       <h2>Tâches</h2>
@@ -43,5 +56,6 @@
   <!-- L'ordre compte : stockage.js d'abord, car taches.js l'utilise -->
   <script src="stockage.js"></script>
   <script src="taches.js"></script>
+  <script src="minuteur.js"></script>
 </body>
 </html>
