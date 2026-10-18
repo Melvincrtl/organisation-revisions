@@ -99,6 +99,7 @@ function lireEcheance() {
 
 function enregistrerTaches() {
   ecrireDonnees(CLE_TACHES, taches);
+  afficherCompteur(); // les tâches ont changé : le compteur du jour aussi (compteur.js)
 }
 
 // Redessine toute la liste à partir du tableau "taches"

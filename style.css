@@ -237,3 +237,32 @@ button {
     background: var(--carte);
   }
 }
+
+/* ===== Compteur du jour ===== */
+.compteurs {
+  display: flex;
+  gap: 12px;
+}
+
+.compteur {
+  flex: 1; /* les deux cases ont la même largeur */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: var(--fond);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.compteur-nombre {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.compteur-libelle {
+  font-size: 0.9rem;
+  color: var(--discret);
+}

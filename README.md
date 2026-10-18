@@ -17,9 +17,10 @@ Double-cliquer sur `index.html` : la page s'ouvre dans le navigateur.
 | `stockage.js` | Lire / écrire les données dans le localStorage        |
 | `taches.js`   | Liste de tâches (ajout, fait / à faire, suppression)  |
 | `minuteur.js` | Minuteur Pomodoro 25 / 5 min avec alerte              |
+| `compteur.js` | Bilan du jour : tâches faites et sessions Pomodoro    |
 
 ## Avancement
 
 - [x] Étape 1 : liste de tâches
 - [x] Étape 2 : minuteur Pomodoro
-- [ ] Étape 3 : compteur du jour
+- [x] Étape 3 : compteur du jour
