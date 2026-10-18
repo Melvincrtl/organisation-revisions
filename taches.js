@@ -160,6 +160,18 @@ formulaire.addEventListener("submit", (evenement) => {
   champTitre.focus();
 });
 
+// Un clic n'importe où sur le champ de date ouvre le calendrier
+// (sans ça, il faut viser la petite icône)
+champEcheance.addEventListener("click", () => {
+  if (champEcheance.showPicker) { // les navigateurs anciens n'ont pas cette fonction
+    try {
+      champEcheance.showPicker();
+    } catch (erreur) {
+      // certains navigateurs refusent : le champ reste utilisable normalement
+    }
+  }
+});
+
 // Au chargement : échéance proposée = aujourd'hui, puis premier affichage
 champEcheance.value = dateDuJour();
 afficherTaches();

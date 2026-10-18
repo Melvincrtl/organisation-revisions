@@ -77,6 +77,21 @@ input[type="date"] {
   width: 100%;
 }
 
+/* Champ de date plus grand et plus facile à toucher */
+input[type="date"] {
+  font-size: 1.15rem;
+  padding: 14px 12px;
+  min-height: 54px;
+  cursor: pointer;
+}
+
+/* Icône calendrier agrandie (Chrome, Edge, Safari) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
 button {
   font: inherit;
   padding: 10px 14px;
