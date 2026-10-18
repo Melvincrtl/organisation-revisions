@@ -31,12 +31,82 @@ function estEnMarche() {
   return heureDeFin !== null;
 }
 
+// Durée complète d'une phase ("travail" ou "pause")
+function dureeDe(laPhase) {
+  return laPhase === "travail" ? DUREE_TRAVAIL : DUREE_PAUSE;
+}
+
+// ===== Sauvegarde dans le navigateur =====
+// Pour que le minuteur survive à un rechargement de la page.
+
+const CLE_MINUTEUR = "revisions-minuteur";
+
+function enregistrerMinuteur() {
+  ecrireDonnees(CLE_MINUTEUR, {
+    phase: phase,
+    tempsRestant: tempsRestant,
+    heureDeFin: heureDeFin,
+  });
+}
+
+// Vérifie que les données relues ont un sens (sinon : on les ignore)
+function etatValide(etat) {
+  if (etat === null || typeof etat !== "object") {
+    return false;
+  }
+  if (etat.phase !== "travail" && etat.phase !== "pause") {
+    return false;
+  }
+  const duree = dureeDe(etat.phase);
+  // Number.isFinite : vrai seulement pour un vrai nombre (pas du texte, pas "NaN")
+  if (!Number.isFinite(etat.tempsRestant) || etat.tempsRestant < 0 || etat.tempsRestant > duree) {
+    return false;
+  }
+  if (etat.heureDeFin !== null) {
+    if (!Number.isFinite(etat.heureDeFin) || etat.heureDeFin - Date.now() > duree) {
+      return false; // une fin plus lointaine que la durée de la phase : impossible
+    }
+  }
+  return true;
+}
+
+// Au chargement de la page : on reprend là où on s'était arrêté
+function restaurerMinuteur() {
+  const etat = lireDonnees(CLE_MINUTEUR, null);
+  if (!etatValide(etat)) {
+    return; // rien d'enregistré ou données abîmées : on garde 25:00, travail
+  }
+
+  phase = etat.phase;
+  tempsRestant = etat.tempsRestant;
+  heureDeFin = etat.heureDeFin;
+
+  if (estEnMarche()) {
+    if (heureDeFin <= Date.now()) {
+      // La période s'est terminée pendant que la page était fermée.
+      // finDePeriode() enregistre aussitôt le minuteur comme arrêté :
+      // au rechargement suivant, la session ne sera donc pas recomptée.
+      finDePeriode();
+    } else {
+      // Toujours en cours : on relance la boucle d'affichage
+      intervalle = setInterval(mettreAJour, 250);
+      mettreAJour();
+    }
+  }
+}
+
 // Met à jour tout ce qui s'affiche selon l'état actuel
 function afficherMinuteur() {
   affichageTemps.textContent = formaterTemps(tempsRestant);
   affichagePhase.textContent = phase === "travail" ? "Travail" : "Pause";
   blocMinuteur.classList.toggle("phase-pause", phase === "pause");
-  boutonDemarrer.textContent = estEnMarche() ? "Pause" : "Démarrer";
+  if (estEnMarche()) {
+    boutonDemarrer.textContent = "Pause";
+  } else if (tempsRestant < dureeDe(phase)) {
+    boutonDemarrer.textContent = "Reprendre"; // arrêté en cours de route
+  } else {
+    boutonDemarrer.textContent = "Démarrer";
+  }
 
   // Le temps apparaît aussi dans l'onglet du navigateur
   if (estEnMarche()) {
@@ -61,6 +131,7 @@ function demarrer() {
   cacherAlerte();
   heureDeFin = Date.now() + tempsRestant;
   intervalle = setInterval(mettreAJour, 250);
+  enregistrerMinuteur();
   afficherMinuteur();
 }
 
@@ -69,6 +140,7 @@ function mettreEnPause() {
   tempsRestant = heureDeFin - Date.now(); // on mémorise ce qu'il reste
   heureDeFin = null;
   document.title = TITRE_PAGE;
+  enregistrerMinuteur();
   afficherMinuteur();
 }
 
@@ -81,6 +153,7 @@ function reinitialiser() {
   tempsRestant = DUREE_TRAVAIL;
   document.title = TITRE_PAGE;
   cacherAlerte();
+  enregistrerMinuteur();
   afficherMinuteur();
 }
 
@@ -101,6 +174,7 @@ function finDePeriode() {
     montrerAlerte("Pause terminée. On reprend le travail !", "⏰ Au travail !");
   }
 
+  enregistrerMinuteur();
   jouerBip();
   afficherMinuteur();
 }
@@ -171,4 +245,9 @@ boutonDemarrer.addEventListener("click", () => {
 
 boutonReinitialiser.addEventListener("click", reinitialiser);
 
+// Si le minuteur a repris tout seul après un rechargement, le son n'est pas
+// encore autorisé : on le prépare au premier clic n'importe où sur la page.
+document.addEventListener("click", preparerSon, { once: true });
+
+restaurerMinuteur();
 afficherMinuteur();

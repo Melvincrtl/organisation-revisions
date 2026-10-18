@@ -71,7 +71,9 @@
   <!-- L'ordre compte : stockage.js d'abord, car taches.js l'utilise -->
   <script src="stockage.js"></script>
   <script src="taches.js"></script>
-  <script src="minuteur.js"></script>
+  <!-- compteur.js avant minuteur.js : au chargement, le minuteur peut
+       avoir besoin de compter une session terminée pendant l'absence -->
   <script src="compteur.js"></script>
+  <script src="minuteur.js"></script>
 </body>
 </html>

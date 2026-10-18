@@ -24,3 +24,5 @@ Double-cliquer sur `index.html` : la page s'ouvre dans le navigateur.
 - [x] Étape 1 : liste de tâches
 - [x] Étape 2 : minuteur Pomodoro
 - [x] Étape 3 : compteur du jour
+- [x] Amélioration 1 : le minuteur survit à un rechargement de la page
+- [ ] Amélioration 2 : modifier une tâche
