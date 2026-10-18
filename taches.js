@@ -18,7 +18,9 @@ let taches = lireDonnees(CLE_TACHES, []);
 const formulaire = document.getElementById("form-tache");
 const champTitre = document.getElementById("champ-titre");
 const champMatiere = document.getElementById("champ-matiere");
-const champEcheance = document.getElementById("champ-echeance");
+const champJour = document.getElementById("champ-jour");
+const champMois = document.getElementById("champ-mois");
+const champAnnee = document.getElementById("champ-annee");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
 
@@ -35,6 +37,64 @@ function dateDuJour() {
 function formaterDate(dateTexte) {
   const [annee, mois, jour] = dateTexte.split("-");
   return `${jour}/${mois}/${annee}`;
+}
+
+// ===== Choix de l'échéance : listes jour / mois / année =====
+
+const NOMS_MOIS = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+
+// Ajoute une option (un choix) dans une liste déroulante
+function ajouterOption(liste, valeur, texte) {
+  const option = document.createElement("option");
+  option.value = valeur;
+  option.textContent = texte;
+  liste.append(option);
+}
+
+// Remplit les listes des mois et des années (une seule fois, au chargement)
+function remplirMoisEtAnnees() {
+  for (let i = 0; i < 12; i++) {
+    ajouterOption(champMois, i + 1, NOMS_MOIS[i]);
+  }
+  const anneeActuelle = new Date().getFullYear();
+  for (let annee = anneeActuelle; annee <= anneeActuelle + 2; annee++) {
+    ajouterOption(champAnnee, annee, annee);
+  }
+}
+
+// Remplit la liste des jours selon le mois choisi (28, 29, 30 ou 31 jours)
+function mettreAJourJours() {
+  const jourChoisi = Number(champJour.value) || 1;
+  const annee = Number(champAnnee.value);
+  const mois = Number(champMois.value);
+  // Astuce : le "jour 0" du mois suivant = le dernier jour du mois choisi
+  const nombreDeJours = new Date(annee, mois, 0).getDate();
+
+  champJour.innerHTML = "";
+  for (let jour = 1; jour <= nombreDeJours; jour++) {
+    ajouterOption(champJour, jour, jour);
+  }
+  // On garde le jour choisi s'il existe encore (ex. : 31 → 30 en avril)
+  champJour.value = Math.min(jourChoisi, nombreDeJours);
+}
+
+// Place les trois listes sur la date d'aujourd'hui
+function choisirAujourdhui() {
+  const maintenant = new Date();
+  champAnnee.value = maintenant.getFullYear();
+  champMois.value = maintenant.getMonth() + 1;
+  mettreAJourJours(); // crée les jours du mois en cours
+  champJour.value = maintenant.getDate();
+}
+
+// Assemble la date choisie au format AAAA-MM-JJ
+function lireEcheance() {
+  const mois = String(champMois.value).padStart(2, "0");
+  const jour = String(champJour.value).padStart(2, "0");
+  return `${champAnnee.value}-${mois}-${jour}`;
 }
 
 function enregistrerTaches() {
@@ -154,24 +214,18 @@ formulaire.addEventListener("submit", (evenement) => {
     return; // on refuse un titre ou une matière fait uniquement d'espaces
   }
 
-  ajouterTache(titre, matiere, champEcheance.value);
+  ajouterTache(titre, matiere, lireEcheance());
   formulaire.reset();
-  champEcheance.value = dateDuJour(); // reset() a vidé la date : on remet aujourd'hui
+  choisirAujourdhui(); // reset() a modifié les listes : on remet aujourd'hui
   champTitre.focus();
 });
 
-// Un clic n'importe où sur le champ de date ouvre le calendrier
-// (sans ça, il faut viser la petite icône)
-champEcheance.addEventListener("click", () => {
-  if (champEcheance.showPicker) { // les navigateurs anciens n'ont pas cette fonction
-    try {
-      champEcheance.showPicker();
-    } catch (erreur) {
-      // certains navigateurs refusent : le champ reste utilisable normalement
-    }
-  }
-});
+// Quand on change de mois ou d'année, le nombre de jours peut changer
+champMois.addEventListener("change", mettreAJourJours);
+champAnnee.addEventListener("change", mettreAJourJours);
 
-// Au chargement : échéance proposée = aujourd'hui, puis premier affichage
-champEcheance.value = dateDuJour();
+// Au chargement : on prépare les listes, échéance proposée = aujourd'hui,
+// puis premier affichage des tâches
+remplirMoisEtAnnees();
+choisirAujourdhui();
 afficherTaches();
