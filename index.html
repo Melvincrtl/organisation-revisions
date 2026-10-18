@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Indispensable pour que la page s'adapte à l'écran du téléphone -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mes révisions</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Mes révisions</h1>
+
+    <!-- ===== Bloc : liste de tâches ===== -->
+    <section class="bloc">
+      <h2>Tâches</h2>
+
+      <form id="form-tache">
+        <label>
+          Titre
+          <input type="text" id="champ-titre" required placeholder="Ex. : Refaire l'exercice 3 sur les amortissements">
+        </label>
+        <label>
+          Matière
+          <input type="text" id="champ-matiere" required placeholder="Ex. : Comptabilité financière">
+        </label>
+        <label>
+          Échéance
+          <input type="date" id="champ-echeance" required>
+        </label>
+        <button type="submit">Ajouter la tâche</button>
+      </form>
+
+      <!-- La liste est remplie par taches.js -->
+      <ul id="liste-taches"></ul>
+      <p id="message-vide" class="discret">Aucune tâche pour l'instant.</p>
+    </section>
+  </main>
+
+  <!-- L'ordre compte : stockage.js d'abord, car taches.js l'utilise -->
+  <script src="stockage.js"></script>
+  <script src="taches.js"></script>
+</body>
+</html>

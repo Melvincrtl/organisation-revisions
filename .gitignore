@@ -1,0 +1,4 @@
+# Réglages de l'outil Claude Code (pas utiles au projet)
+.claude/
+# Fichier système macOS
+.DS_Store

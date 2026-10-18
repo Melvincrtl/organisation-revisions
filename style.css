@@ -1,0 +1,143 @@
+/* ===== Couleurs réutilisées partout ===== */
+:root {
+  --fond: #f5f6f8;
+  --carte: #ffffff;
+  --texte: #1f2328;
+  --discret: #6b7280;
+  --accent: #2563eb;
+  --bordure: #d8dce2;
+  --retard: #b91c1c;
+}
+
+/* ===== Base ===== */
+* {
+  box-sizing: border-box; /* les tailles incluent les marges intérieures */
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--fond);
+  color: var(--texte);
+}
+
+main {
+  max-width: 640px;  /* sur grand écran, la page ne s'étale pas trop */
+  margin: 0 auto;    /* centrée */
+  padding: 16px;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 8px 0 16px;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 12px;
+}
+
+.discret {
+  color: var(--discret);
+}
+
+/* ===== Les blocs (cartes blanches) ===== */
+.bloc {
+  background: var(--carte);
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* ===== Formulaire ===== */
+form {
+  display: flex;
+  flex-direction: column; /* les champs les uns sous les autres */
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+input[type="text"],
+input[type="date"] {
+  font: inherit;
+  font-weight: normal;
+  padding: 10px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  width: 100%;
+}
+
+button {
+  font: inherit;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+
+/* ===== Liste de tâches ===== */
+#liste-taches {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.tache {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--bordure);
+}
+
+.tache input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.tache-infos {
+  flex: 1; /* prend toute la place restante */
+  min-width: 0;
+}
+
+.tache-titre {
+  font-weight: 600;
+  overflow-wrap: anywhere; /* coupe les mots très longs au lieu de déborder */
+}
+
+.tache-details {
+  font-size: 0.875rem;
+  color: var(--discret);
+}
+
+/* Tâche faite : barrée et grisée */
+.tache.faite .tache-titre {
+  text-decoration: line-through;
+  color: var(--discret);
+}
+
+/* Tâche en retard (échéance passée et pas faite) */
+.tache.en-retard .tache-details {
+  color: var(--retard);
+  font-weight: 600;
+}
+
+.bouton-supprimer {
+  background: transparent;
+  color: var(--discret);
+  border: 1px solid var(--bordure);
+  padding: 6px 10px;
+}
