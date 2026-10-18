@@ -173,6 +173,14 @@ button {
   font-weight: 600;
 }
 
+/* Les boutons Modifier et Supprimer, empilés pour tenir sur un téléphone */
+.tache-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bouton-modifier,
 .bouton-supprimer {
   background: transparent;
   color: var(--discret);

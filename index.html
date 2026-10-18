@@ -59,7 +59,9 @@
           <select id="champ-mois" aria-label="Mois"></select>
           <select id="champ-annee" aria-label="Année"></select>
         </fieldset>
-        <button type="submit">Ajouter la tâche</button>
+        <button type="submit" id="bouton-ajouter">Ajouter la tâche</button>
+        <!-- Visible seulement pendant la modification d'une tâche -->
+        <button type="button" id="bouton-annuler" class="bouton-secondaire" hidden>Annuler</button>
       </form>
 
       <!-- La liste est remplie par taches.js -->

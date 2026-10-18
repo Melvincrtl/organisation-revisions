@@ -1,5 +1,5 @@
 // taches.js
-// Gère la liste de tâches : ajout, case "fait", suppression, affichage.
+// Gère la liste de tâches : ajout, modification, case "fait", suppression, affichage.
 
 const CLE_TACHES = "revisions-taches";
 
@@ -23,6 +23,11 @@ const champMois = document.getElementById("champ-mois");
 const champAnnee = document.getElementById("champ-annee");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
+const boutonAjouter = document.getElementById("bouton-ajouter");
+const boutonAnnuler = document.getElementById("bouton-annuler");
+
+// Numéro de la tâche en cours de modification (null = on ajoute une nouvelle tâche)
+let idEnEdition = null;
 
 // Date du jour au format AAAA-MM-JJ, selon l'heure locale
 function dateDuJour() {
@@ -97,6 +102,19 @@ function lireEcheance() {
   return `${champAnnee.value}-${mois}-${jour}`;
 }
 
+// L'inverse : place les trois listes sur une date "AAAA-MM-JJ"
+function positionnerEcheance(dateTexte) {
+  const [annee, mois, jour] = dateTexte.split("-").map(Number); // "05" → 5
+  // Une échéance d'une année absente de la liste (ex. : l'an dernier) : on l'ajoute
+  if (![...champAnnee.options].some((option) => Number(option.value) === annee)) {
+    ajouterOption(champAnnee, annee, annee);
+  }
+  champAnnee.value = annee;
+  champMois.value = mois;
+  mettreAJourJours(); // le bon nombre de jours pour ce mois
+  champJour.value = jour;
+}
+
 function enregistrerTaches() {
   ecrireDonnees(CLE_TACHES, taches);
   afficherCompteur(); // les tâches ont changé : le compteur du jour aussi (compteur.js)
@@ -150,13 +168,22 @@ function afficherTaches() {
 
     infos.append(titre, details);
 
-    // Bouton supprimer
+    // Boutons modifier et supprimer, regroupés
+    const actions = document.createElement("div");
+    actions.className = "tache-actions";
+
+    const boutonModifier = document.createElement("button");
+    boutonModifier.className = "bouton-modifier";
+    boutonModifier.textContent = "Modifier";
+    boutonModifier.addEventListener("click", () => commencerModification(tache.id));
+
     const boutonSupprimer = document.createElement("button");
     boutonSupprimer.className = "bouton-supprimer";
     boutonSupprimer.textContent = "Supprimer";
     boutonSupprimer.addEventListener("click", () => supprimerTache(tache.id));
 
-    ligne.append(caseFaite, infos, boutonSupprimer);
+    actions.append(boutonModifier, boutonSupprimer);
+    ligne.append(caseFaite, infos, actions);
     listeTaches.append(ligne);
   }
 
@@ -201,9 +228,52 @@ function supprimerTache(id) {
     return;
   }
   taches = taches.filter((t) => t.id !== id);
+  if (id === idEnEdition) {
+    quitterModification(); // la tâche qu'on modifiait n'existe plus
+  }
   enregistrerTaches();
   afficherTaches();
 }
+
+// ===== Modification d'une tâche =====
+
+// Remplit le formulaire avec la tâche choisie et passe en mode "modification"
+function commencerModification(id) {
+  const tache = taches.find((t) => t.id === id);
+  idEnEdition = id;
+  champTitre.value = tache.titre;
+  champMatiere.value = tache.matiere;
+  positionnerEcheance(tache.echeance);
+  boutonAjouter.textContent = "Enregistrer les modifications";
+  boutonAnnuler.hidden = false;
+  // Sur téléphone, le formulaire peut être plus haut : on remonte jusqu'à lui
+  formulaire.scrollIntoView({ behavior: "smooth" });
+  champTitre.focus();
+}
+
+// Met à jour la tâche : même id, et on ne touche pas à "faite" ni à "faiteLe"
+function modifierTache(id, titre, matiere, echeance) {
+  const tache = taches.find((t) => t.id === id);
+  if (tache === undefined) {
+    return; // tâche introuvable (par sécurité) : on ne fait rien
+  }
+  tache.titre = titre;
+  tache.matiere = matiere;
+  tache.echeance = echeance;
+  enregistrerTaches();
+  afficherTaches();
+}
+
+// Revient au formulaire d'ajout normal
+function quitterModification() {
+  idEnEdition = null;
+  formulaire.reset();
+  choisirAujourdhui(); // reset() a modifié les listes : on remet aujourd'hui
+  boutonAjouter.textContent = "Ajouter la tâche";
+  boutonAnnuler.hidden = true;
+}
+
+boutonAnnuler.addEventListener("click", quitterModification);
 
 // Quand on valide le formulaire
 formulaire.addEventListener("submit", (evenement) => {
@@ -215,9 +285,12 @@ formulaire.addEventListener("submit", (evenement) => {
     return; // on refuse un titre ou une matière fait uniquement d'espaces
   }
 
-  ajouterTache(titre, matiere, lireEcheance());
-  formulaire.reset();
-  choisirAujourdhui(); // reset() a modifié les listes : on remet aujourd'hui
+  if (idEnEdition === null) {
+    ajouterTache(titre, matiere, lireEcheance());
+  } else {
+    modifierTache(idEnEdition, titre, matiere, lireEcheance());
+  }
+  quitterModification(); // vide le formulaire et remet le mode ajout
   champTitre.focus();
 });
 
