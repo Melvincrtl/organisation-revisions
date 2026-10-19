@@ -52,8 +52,13 @@
           Matière
           <input type="text" id="champ-matiere" required placeholder="Ex. : Comptabilité financière">
         </label>
+        <!-- Cochée : la tâche est un examen, mise en surbrillance dans la liste -->
+        <label class="case-option">
+          <input type="checkbox" id="case-examen">
+          C'est un examen
+        </label>
         <!-- Décochée : la tâche n'a pas d'échéance et le champ de date disparaît -->
-        <label class="case-echeance">
+        <label class="case-option">
           <input type="checkbox" id="case-echeance" checked>
           Ajouter une échéance
         </label>

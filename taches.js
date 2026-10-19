@@ -10,7 +10,8 @@ const CLE_TACHES = "revisions-taches";
 //   matiere: "Comptabilité",
 //   echeance: "2026-10-25",     // format AAAA-MM-JJ, ou null si pas d'échéance
 //   faite: false,
-//   faiteLe: null               // date où elle a été cochée (servira au compteur)
+//   faiteLe: null,              // date où elle a été cochée (servira au compteur)
+//   examen: false               // true = examen, mis en surbrillance (absent sur les anciennes tâches)
 // }
 let taches = lireDonnees(CLE_TACHES, []);
 
@@ -20,6 +21,7 @@ const champTitre = document.getElementById("champ-titre");
 const champMatiere = document.getElementById("champ-matiere");
 const champEcheance = document.getElementById("champ-echeance");
 const caseEcheance = document.getElementById("case-echeance");
+const caseExamen = document.getElementById("case-examen");
 const blocEcheance = document.getElementById("bloc-echeance");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
@@ -108,6 +110,10 @@ function afficherTaches() {
     } else if (enRetard) {
       ligne.classList.add("en-retard");
     }
+    // "=== true" : les anciennes tâches n'ont pas de champ "examen", elles ne sont donc pas des examens
+    if (tache.examen === true) {
+      ligne.classList.add("examen");
+    }
 
     // Case à cocher "fait"
     const caseFaite = document.createElement("input");
@@ -123,6 +129,13 @@ function afficherTaches() {
     const titre = document.createElement("div");
     titre.className = "tache-titre";
     titre.textContent = tache.titre; // textContent : le texte est affiché tel quel, sans être interprété comme du HTML
+    if (tache.examen === true) {
+      // Étiquette "EXAM" placée devant le titre
+      const badge = document.createElement("span");
+      badge.className = "badge-examen";
+      badge.textContent = "EXAM";
+      titre.prepend(badge);
+    }
 
     const details = document.createElement("div");
     details.className = "tache-details";
@@ -173,7 +186,7 @@ function nouvelId() {
   return plusGrand + 1;
 }
 
-function ajouterTache(titre, matiere, echeance) {
+function ajouterTache(titre, matiere, echeance, examen) {
   taches.push({
     id: nouvelId(),
     titre: titre,
@@ -181,6 +194,7 @@ function ajouterTache(titre, matiere, echeance) {
     echeance: echeance,
     faite: false,
     faiteLe: null,
+    examen: examen,
   });
   enregistrerTaches();
   afficherTaches();
@@ -214,6 +228,7 @@ function commencerModification(id) {
   idEnEdition = id;
   champTitre.value = tache.titre;
   champMatiere.value = tache.matiere;
+  caseExamen.checked = tache.examen === true;
   if (tache.echeance === null) {
     caseEcheance.checked = false;
     champEcheance.value = dateDuJour(); // proposée si on recoche la case
@@ -230,7 +245,7 @@ function commencerModification(id) {
 }
 
 // Met à jour la tâche : même id, et on ne touche pas à "faite" ni à "faiteLe"
-function modifierTache(id, titre, matiere, echeance) {
+function modifierTache(id, titre, matiere, echeance, examen) {
   const tache = taches.find((t) => t.id === id);
   if (tache === undefined) {
     return; // tâche introuvable (par sécurité) : on ne fait rien
@@ -238,6 +253,7 @@ function modifierTache(id, titre, matiere, echeance) {
   tache.titre = titre;
   tache.matiere = matiere;
   tache.echeance = echeance;
+  tache.examen = examen;
   enregistrerTaches();
   afficherTaches();
 }
@@ -245,7 +261,7 @@ function modifierTache(id, titre, matiere, echeance) {
 // Revient au formulaire d'ajout normal
 function quitterModification() {
   idEnEdition = null;
-  formulaire.reset(); // recoche aussi la case "Ajouter une échéance"
+  formulaire.reset(); // recoche "Ajouter une échéance" et décoche "C'est un examen"
   champEcheance.value = dateDuJour(); // reset() a vidé la date : on remet aujourd'hui
   afficherChampEcheance();
   boutonAjouter.textContent = "Ajouter la tâche";
@@ -281,9 +297,9 @@ formulaire.addEventListener("submit", (evenement) => {
   }
 
   if (idEnEdition === null) {
-    ajouterTache(titre, matiere, lireEcheance());
+    ajouterTache(titre, matiere, lireEcheance(), caseExamen.checked);
   } else {
-    modifierTache(idEnEdition, titre, matiere, lireEcheance());
+    modifierTache(idEnEdition, titre, matiere, lireEcheance(), caseExamen.checked);
   }
   quitterModification(); // vide le formulaire et remet le mode ajout
   champTitre.focus();

@@ -9,6 +9,8 @@
   --retard: #b91c1c;
   --pause: #15803d;
   --alerte-fond: #fef3c7;
+  --examen: #c2410c;
+  --examen-fond: #fff7ed;
 }
 
 /* ===== Base ===== */
@@ -94,15 +96,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-/* Case "Ajouter une échéance" : case et texte sur la même ligne */
-.case-echeance {
+/* Cases "C'est un examen" et "Ajouter une échéance" : case et texte sur la même ligne */
+.case-option {
   flex-direction: row;
   align-items: center;
   gap: 8px;
   cursor: pointer;
 }
 
-.case-echeance input {
+.case-option input {
   width: 20px;
   height: 20px;
 }
@@ -271,4 +273,36 @@ button {
 .compteur-libelle {
   font-size: 0.9rem;
   color: var(--discret);
+}
+
+/* ===== Tâche d'examen : mise en surbrillance ===== */
+.tache.examen {
+  background: var(--examen-fond);
+  border-left: 4px solid var(--examen);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Étiquette "EXAM" devant le titre */
+.badge-examen {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--examen);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  vertical-align: 2px;
+}
+
+/* Examen fait : surbrillance atténuée */
+.tache.examen.faite {
+  background: transparent;
+  border-left-color: var(--bordure);
+}
+
+.tache.examen.faite .badge-examen {
+  background: var(--discret);
 }
