@@ -218,6 +218,7 @@ function finDePeriode() {
   // On passe à la phase suivante, sans la lancer : tu cliques sur Démarrer
   if (phase === "travail") {
     ajouterSessionPomodoro(); // une session de travail complète (compteur.js)
+    ajouterMinutesTravail(minutesTravail); // et sa durée, en minutes (compteur.js)
     phase = "pause";
     tempsRestant = dureeDe("pause");
     montrerAlerte("Bravo, session terminée ! Place à la pause.", "⏰ Pause !");
