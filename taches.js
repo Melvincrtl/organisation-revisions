@@ -44,6 +44,34 @@ function formaterDate(dateTexte) {
   return `${jour}/${mois}/${annee}`;
 }
 
+// Nombre de jours entre aujourd'hui et une date "AAAA-MM-JJ"
+// (positif = dans le futur, 0 = aujourd'hui, négatif = dépassée)
+function joursRestants(dateTexte) {
+  const [annee, mois, jour] = dateTexte.split("-").map(Number);
+  const echeance = new Date(annee, mois - 1, jour); // à minuit, heure locale
+  const maintenant = new Date();
+  const aujourdhui = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
+  const UN_JOUR = 24 * 60 * 60 * 1000; // en millisecondes
+  // Math.round : au changement d'heure, une journée dure 23 ou 25 heures
+  return Math.round((echeance - aujourdhui) / UN_JOUR);
+}
+
+// Transforme un nombre de jours en texte lisible
+function texteJoursRestants(jours) {
+  if (jours === 0) {
+    return "aujourd'hui";
+  }
+  if (jours === 1) {
+    return "demain";
+  }
+  if (jours > 1) {
+    return "dans " + jours + " jours";
+  }
+  // Négatif : la date est dépassée
+  const retard = -jours;
+  return "en retard de " + retard + (retard === 1 ? " jour" : " jours");
+}
+
 function enregistrerTaches() {
   ecrireDonnees(CLE_TACHES, taches);
   afficherCompteur(); // les tâches ont changé : le compteur du jour aussi (compteur.js)
@@ -102,8 +130,9 @@ function afficherTaches() {
       details.textContent = tache.matiere + " · Sans échéance";
     } else {
       let texteEcheance = "Pour le " + formaterDate(tache.echeance);
-      if (enRetard) {
-        texteEcheance += " — en retard";
+      if (!tache.faite) {
+        // Le compte à rebours ne sert que pour les tâches encore à faire
+        texteEcheance += " — " + texteJoursRestants(joursRestants(tache.echeance));
       }
       details.textContent = tache.matiere + " · " + texteEcheance;
     }
@@ -275,3 +304,13 @@ champEcheance.addEventListener("click", () => {
 // Au chargement : échéance proposée = aujourd'hui, puis premier affichage
 champEcheance.value = dateDuJour();
 afficherTaches();
+
+// Si la page reste ouverte après minuit, on réaffiche la liste pour mettre
+// à jour les jours restants et les retards. On vérifie toutes les minutes.
+let jourAffiche = dateDuJour();
+setInterval(() => {
+  if (dateDuJour() !== jourAffiche) {
+    jourAffiche = dateDuJour();
+    afficherTaches();
+  }
+}, 60 * 1000);
