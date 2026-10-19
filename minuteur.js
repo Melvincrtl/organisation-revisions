@@ -117,15 +117,8 @@ function restaurerMinuteur() {
 
   if (estEnMarche()) {
     if (heureDeFin <= Date.now()) {
-      // La période s'est terminée pendant que la page était fermée.
-      if (Date.now() - heureDeFin > DELAI_MAX_ABSENCE) {
-        // Terminée depuis trop longtemps : on ne compte rien
-        abandonnerPeriode();
-      } else {
-        // Terminée récemment : comme d'habitude. finDePeriode() enregistre aussitôt
-        // le minuteur comme arrêté : au rechargement suivant, rien n'est recompté.
-        finDePeriode();
-      }
+      // La période s'est terminée pendant que la page était fermée
+      terminerPeriodeEchue();
     } else {
       // Toujours en cours : on relance la boucle d'affichage
       intervalle = setInterval(mettreAJour, 250);
@@ -134,13 +127,29 @@ function restaurerMinuteur() {
   }
 }
 
+// Le temps de la période est écoulé : appelée au chargement de la page (période finie
+// pendant que la page était fermée) et par mettreAJour() (par exemple au réveil
+// d'un ordinateur ou d'un téléphone mis en veille pendant le décompte).
+function terminerPeriodeEchue() {
+  if (Date.now() - heureDeFin > DELAI_MAX_ABSENCE) {
+    // Terminée depuis trop longtemps : on ne compte rien
+    abandonnerPeriode();
+  } else {
+    // Terminée récemment : comme d'habitude. finDePeriode() enregistre aussitôt
+    // le minuteur comme arrêté : au rechargement suivant, rien n'est recompté.
+    finDePeriode();
+  }
+}
+
 // Période terminée depuis trop longtemps : on revient au travail, au début, sans rien compter
 function abandonnerPeriode() {
+  clearInterval(intervalle); // arrête la boucle d'affichage si elle tournait
   const etaitDuTravail = phase === "travail";
   phase = "travail";
   tempsRestant = dureeDe("travail");
   heureDeFin = null;
   enregistrerMinuteur(); // stable : au rechargement suivant, il n'y a plus rien à terminer
+  document.title = TITRE_PAGE; // l'onglet affichait encore "mm:ss · Travail"
 
   // Message seulement pour une période de travail. Pour une pause, le travail qui
   // la précédait a bien été compté : on revient simplement au travail, sans message.
@@ -148,6 +157,7 @@ function abandonnerPeriode() {
     affichageMessage.textContent = "Session interrompue, elle n'a pas été comptée.";
     affichageMessage.hidden = false;
   }
+  afficherMinuteur(); // sinon, depuis mettreAJour(), l'écran resterait figé sur 00:00
 }
 
 // Met à jour tout ce qui s'affiche selon l'état actuel
@@ -198,7 +208,7 @@ function mettreAJour() {
   // ralentit la page en arrière-plan, le temps reste juste.
   tempsRestant = heureDeFin - Date.now();
   if (tempsRestant <= 0) {
-    finDePeriode();
+    terminerPeriodeEchue(); // compte la période, ou l'abandonne si elle est finie depuis trop longtemps
   } else {
     afficherMinuteur();
   }
