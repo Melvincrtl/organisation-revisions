@@ -2,6 +2,10 @@
 // Minuteur Pomodoro : une période de travail (durée réglable, 25 min par défaut),
 // puis une pause dont la durée dépend du travail, et ainsi de suite.
 
+// Si une période s'est terminée pendant que la page était fermée, et qu'on revient
+// plus de 30 min après sa fin, on considère qu'elle a été abandonnée : rien n'est compté.
+const DELAI_MAX_ABSENCE = 30 * 60 * 1000; // en millisecondes (30 min)
+
 // ===== Durées =====
 
 const CLE_DUREE = "revisions-duree-travail";
@@ -114,14 +118,35 @@ function restaurerMinuteur() {
   if (estEnMarche()) {
     if (heureDeFin <= Date.now()) {
       // La période s'est terminée pendant que la page était fermée.
-      // finDePeriode() enregistre aussitôt le minuteur comme arrêté :
-      // au rechargement suivant, la session ne sera donc pas recomptée.
-      finDePeriode();
+      if (Date.now() - heureDeFin > DELAI_MAX_ABSENCE) {
+        // Terminée depuis trop longtemps : on ne compte rien
+        abandonnerPeriode();
+      } else {
+        // Terminée récemment : comme d'habitude. finDePeriode() enregistre aussitôt
+        // le minuteur comme arrêté : au rechargement suivant, rien n'est recompté.
+        finDePeriode();
+      }
     } else {
       // Toujours en cours : on relance la boucle d'affichage
       intervalle = setInterval(mettreAJour, 250);
       mettreAJour();
     }
+  }
+}
+
+// Période terminée depuis trop longtemps : on revient au travail, au début, sans rien compter
+function abandonnerPeriode() {
+  const etaitDuTravail = phase === "travail";
+  phase = "travail";
+  tempsRestant = dureeDe("travail");
+  heureDeFin = null;
+  enregistrerMinuteur(); // stable : au rechargement suivant, il n'y a plus rien à terminer
+
+  // Message seulement pour une période de travail. Pour une pause, le travail qui
+  // la précédait a bien été compté : on revient simplement au travail, sans message.
+  if (etaitDuTravail) {
+    affichageMessage.textContent = "Session interrompue, elle n'a pas été comptée.";
+    affichageMessage.hidden = false;
   }
 }
 
