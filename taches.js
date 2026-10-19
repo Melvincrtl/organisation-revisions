@@ -8,7 +8,7 @@ const CLE_TACHES = "revisions-taches";
 //   id: 3,                      // numéro unique de la tâche
 //   titre: "Exercice 3",
 //   matiere: "Comptabilité",
-//   echeance: "2026-10-25",     // format AAAA-MM-JJ
+//   echeance: "2026-10-25",     // format AAAA-MM-JJ, ou null si pas d'échéance
 //   faite: false,
 //   faiteLe: null               // date où elle a été cochée (servira au compteur)
 // }
@@ -19,6 +19,8 @@ const formulaire = document.getElementById("form-tache");
 const champTitre = document.getElementById("champ-titre");
 const champMatiere = document.getElementById("champ-matiere");
 const champEcheance = document.getElementById("champ-echeance");
+const caseEcheance = document.getElementById("case-echeance");
+const blocEcheance = document.getElementById("bloc-echeance");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
 const boutonAjouter = document.getElementById("bouton-ajouter");
@@ -51,10 +53,17 @@ function enregistrerTaches() {
 function afficherTaches() {
   listeTaches.innerHTML = ""; // on vide la liste avant de la reconstruire
 
-  // Tri : les tâches à faire d'abord, puis par échéance la plus proche
+  // Tri : les tâches à faire d'abord, puis par échéance la plus proche,
+  // et les tâches sans échéance après celles qui en ont une
   const triees = [...taches].sort((a, b) => {
     if (a.faite !== b.faite) {
       return a.faite ? 1 : -1;
+    }
+    if (a.echeance === null || b.echeance === null) {
+      if (a.echeance === b.echeance) {
+        return 0; // toutes les deux sans échéance
+      }
+      return a.echeance === null ? 1 : -1;
     }
     return a.echeance.localeCompare(b.echeance);
   });
@@ -64,9 +73,11 @@ function afficherTaches() {
   for (const tache of triees) {
     const ligne = document.createElement("li");
     ligne.className = "tache";
+    // Une tâche sans échéance n'est jamais en retard
+    const enRetard = !tache.faite && tache.echeance !== null && tache.echeance < aujourdhui;
     if (tache.faite) {
       ligne.classList.add("faite");
-    } else if (tache.echeance < aujourdhui) {
+    } else if (enRetard) {
       ligne.classList.add("en-retard");
     }
 
@@ -87,11 +98,15 @@ function afficherTaches() {
 
     const details = document.createElement("div");
     details.className = "tache-details";
-    let texteEcheance = "Pour le " + formaterDate(tache.echeance);
-    if (!tache.faite && tache.echeance < aujourdhui) {
-      texteEcheance += " — en retard";
+    if (tache.echeance === null) {
+      details.textContent = tache.matiere + " · Sans échéance";
+    } else {
+      let texteEcheance = "Pour le " + formaterDate(tache.echeance);
+      if (enRetard) {
+        texteEcheance += " — en retard";
+      }
+      details.textContent = tache.matiere + " · " + texteEcheance;
     }
-    details.textContent = tache.matiere + " · " + texteEcheance;
 
     infos.append(titre, details);
 
@@ -170,7 +185,14 @@ function commencerModification(id) {
   idEnEdition = id;
   champTitre.value = tache.titre;
   champMatiere.value = tache.matiere;
-  champEcheance.value = tache.echeance; // le calendrier accepte directement "AAAA-MM-JJ"
+  if (tache.echeance === null) {
+    caseEcheance.checked = false;
+    champEcheance.value = dateDuJour(); // proposée si on recoche la case
+  } else {
+    caseEcheance.checked = true;
+    champEcheance.value = tache.echeance; // le calendrier accepte directement "AAAA-MM-JJ"
+  }
+  afficherChampEcheance();
   boutonAjouter.textContent = "Enregistrer les modifications";
   boutonAnnuler.hidden = false;
   // Sur téléphone, le formulaire peut être plus haut : on remonte jusqu'à lui
@@ -194,13 +216,30 @@ function modifierTache(id, titre, matiere, echeance) {
 // Revient au formulaire d'ajout normal
 function quitterModification() {
   idEnEdition = null;
-  formulaire.reset();
+  formulaire.reset(); // recoche aussi la case "Ajouter une échéance"
   champEcheance.value = dateDuJour(); // reset() a vidé la date : on remet aujourd'hui
+  afficherChampEcheance();
   boutonAjouter.textContent = "Ajouter la tâche";
   boutonAnnuler.hidden = true;
 }
 
 boutonAnnuler.addEventListener("click", quitterModification);
+
+// ===== Échéance facultative =====
+
+// Montre ou cache le champ de date selon la case "Ajouter une échéance"
+function afficherChampEcheance() {
+  blocEcheance.hidden = !caseEcheance.checked;
+  // Un champ désactivé n'est plus "required" : le formulaire accepte une date vide
+  champEcheance.disabled = !caseEcheance.checked;
+}
+
+// L'échéance choisie, ou null si la case est décochée
+function lireEcheance() {
+  return caseEcheance.checked ? champEcheance.value : null;
+}
+
+caseEcheance.addEventListener("change", afficherChampEcheance);
 
 // Quand on valide le formulaire
 formulaire.addEventListener("submit", (evenement) => {
@@ -213,9 +252,9 @@ formulaire.addEventListener("submit", (evenement) => {
   }
 
   if (idEnEdition === null) {
-    ajouterTache(titre, matiere, champEcheance.value);
+    ajouterTache(titre, matiere, lireEcheance());
   } else {
-    modifierTache(idEnEdition, titre, matiere, champEcheance.value);
+    modifierTache(idEnEdition, titre, matiere, lireEcheance());
   }
   quitterModification(); // vide le formulaire et remet le mode ajout
   champTitre.focus();

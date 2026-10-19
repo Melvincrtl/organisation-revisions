@@ -94,6 +94,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* Case "Ajouter une échéance" : case et texte sur la même ligne */
+.case-echeance {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.case-echeance input {
+  width: 20px;
+  height: 20px;
+}
+
+/* Champ de date caché quand la case est décochée
+   (nécessaire car "display: flex" des labels l'emporte sur l'attribut hidden) */
+#bloc-echeance[hidden] {
+  display: none;
+}
+
 button {
   font: inherit;
   padding: 10px 14px;
