@@ -15,18 +15,17 @@
     <section class="bloc" id="bloc-minuteur">
       <h2>Minuteur</h2>
       <p id="minuteur-phase" class="minuteur-phase">Travail</p>
-      <p id="minuteur-temps" class="minuteur-temps">25:00</p>
+      <!-- Le temps, avec − à gauche et + à droite pour régler la durée du travail -->
+      <div class="minuteur-affichage">
+        <button type="button" id="bouton-moins" class="bouton-reglage" aria-label="Diminuer la durée de 5 minutes">−</button>
+        <p id="minuteur-temps" class="minuteur-temps">25:00</p>
+        <button type="button" id="bouton-plus" class="bouton-reglage" aria-label="Augmenter la durée de 5 minutes">+</button>
+      </div>
       <!-- Message affiché à la fin d'une période (caché sinon) -->
       <p id="minuteur-message" class="minuteur-message" hidden></p>
       <div class="minuteur-boutons">
         <button type="button" id="bouton-demarrer">Démarrer</button>
         <button type="button" id="bouton-reinitialiser" class="bouton-secondaire">Réinitialiser</button>
-      </div>
-      <!-- Réglage de la durée du travail (la pause en dépend) -->
-      <div class="minuteur-reglage">
-        <label for="champ-duree">Durée du travail</label>
-        <input type="number" id="champ-duree" min="20" max="120" step="1" inputmode="numeric">
-        <span>min</span>
       </div>
       <p id="texte-reglage" class="minuteur-aide discret"></p>
     </section>

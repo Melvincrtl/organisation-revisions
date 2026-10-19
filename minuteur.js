@@ -43,7 +43,8 @@ const affichageTemps = document.getElementById("minuteur-temps");
 const affichageMessage = document.getElementById("minuteur-message");
 const boutonDemarrer = document.getElementById("bouton-demarrer");
 const boutonReinitialiser = document.getElementById("bouton-reinitialiser");
-const champDuree = document.getElementById("champ-duree");
+const boutonMoins = document.getElementById("bouton-moins");
+const boutonPlus = document.getElementById("bouton-plus");
 const texteReglage = document.getElementById("texte-reglage");
 
 const TITRE_PAGE = document.title; // "Mes révisions", pour le remettre ensuite
@@ -142,29 +143,26 @@ function afficherMinuteur() {
     document.title = formaterTemps(tempsRestant) + " · " + affichagePhase.textContent;
   }
 
-  // Réglage de la durée : modifiable seulement avant de commencer une phase
-  champDuree.disabled = !estAuDebut();
-  if (estAuDebut()) {
-    texteReglage.textContent = "Pause : " + minutesPause(minutesTravail) + " min (travail de 20 min à 2 h)";
-  } else {
+  // Boutons − et + : utilisables seulement avant de commencer une période de travail
+  const reglable = phase === "travail" && estAuDebut();
+  boutonMoins.disabled = !reglable || minutesTravail <= MINUTES_MIN; // pas en dessous de 20 min
+  boutonPlus.disabled = !reglable || minutesTravail >= MINUTES_MAX;  // pas au-dessus de 2 h
+  if (reglable) {
+    texteReglage.textContent = "Pause ensuite : " + minutesPause(minutesTravail) + " min";
+  } else if (phase === "travail") {
     texteReglage.textContent = "Réinitialise le minuteur pour changer la durée";
+  } else {
+    texteReglage.textContent = ""; // pendant la pause, rien à régler
   }
 }
 
-// Quand on change la durée du travail
-function changerDuree() {
-  let minutes = Math.round(Number(champDuree.value)); // le champ contient du texte : on le convertit
-  if (champDuree.value === "" || !Number.isFinite(minutes)) {
-    minutes = minutesTravail; // champ vidé ou incompréhensible : on garde l'ancienne durée
-  }
-  // On ramène la valeur entre 20 et 120 minutes
-  minutes = Math.min(Math.max(minutes, MINUTES_MIN), MINUTES_MAX);
-
-  minutesTravail = minutes;
-  champDuree.value = minutes; // affiche la valeur corrigée (ex. : 10 → 20)
+// Ajoute (ou retire, si "ecart" est négatif) des minutes à la durée du travail
+function changerDuree(ecart) {
+  // On reste entre 20 et 120 minutes
+  minutesTravail = Math.min(Math.max(minutesTravail + ecart, MINUTES_MIN), MINUTES_MAX);
   ecrireDonnees(CLE_DUREE, minutesTravail);
 
-  tempsRestant = dureeDe(phase); // la phase en attente prend la nouvelle durée
+  tempsRestant = dureeDe("travail"); // le minuteur affiche la nouvelle durée
   enregistrerMinuteur();
   afficherMinuteur();
 }
@@ -300,9 +298,9 @@ boutonDemarrer.addEventListener("click", () => {
 
 boutonReinitialiser.addEventListener("click", reinitialiser);
 
-// "change" : quand on quitte le champ ou qu'on appuie sur Entrée (pas à chaque chiffre tapé)
-champDuree.addEventListener("change", changerDuree);
-champDuree.value = minutesTravail;
+// Chaque clic change la durée de 5 minutes
+boutonMoins.addEventListener("click", () => changerDuree(-5));
+boutonPlus.addEventListener("click", () => changerDuree(5));
 
 // Si le minuteur a repris tout seul après un rechargement, le son n'est pas
 // encore autorisé : on le prépare au premier clic n'importe où sur la page.

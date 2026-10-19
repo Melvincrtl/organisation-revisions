@@ -206,7 +206,7 @@ button {
 
 .minuteur-temps {
   margin: 4px 0 12px;
-  font-size: 4rem;
+  font-size: clamp(2.6rem, 13vw, 4rem); /* plus petit sur un téléphone étroit, 4rem maximum */
   font-weight: 700;
   font-variant-numeric: tabular-nums; /* chiffres de même largeur : le texte ne "saute" pas */
   line-height: 1.1;
@@ -234,27 +234,36 @@ button {
   border: 1px solid var(--bordure);
 }
 
-/* Réglage de la durée : libellé, champ et "min" sur une ligne */
-.minuteur-reglage {
+/* Le temps entre les boutons − et + */
+.minuteur-affichage {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 16px;
+  margin: 4px 0 12px;
 }
 
-.minuteur-reglage input {
-  font: inherit;
-  width: 80px;
-  padding: 8px;
+.minuteur-affichage .minuteur-temps {
+  margin: 0;
+}
+
+.bouton-reglage {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0; /* garde sa taille même sur petit écran */
+  padding: 0;
+  border-radius: 50%; /* bouton rond */
+  background: transparent;
+  color: var(--accent);
   border: 1px solid var(--bordure);
-  border-radius: 8px;
-  text-align: center;
+  font-size: 1.6rem;
+  line-height: 1;
 }
 
-.minuteur-reglage input:disabled {
-  background: var(--fond);
-  color: var(--discret);
+/* Bouton inutilisable (limite atteinte ou période commencée) */
+.bouton-reglage:disabled {
+  color: var(--bordure);
+  cursor: default;
 }
 
 .minuteur-aide {
