@@ -119,7 +119,8 @@ function afficherTaches() {
     const caseFaite = document.createElement("input");
     caseFaite.type = "checkbox";
     caseFaite.checked = tache.faite;
-    caseFaite.setAttribute("aria-label", "Marquer comme faite");
+    // Le titre dans le libellé : un lecteur d'écran sait de quelle tâche il s'agit
+    caseFaite.setAttribute("aria-label", "Marquer comme faite : " + tache.titre);
     caseFaite.addEventListener("change", () => basculerFaite(tache.id));
 
     // Titre + détails

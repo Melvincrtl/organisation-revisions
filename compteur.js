@@ -1,7 +1,7 @@
 // compteur.js
 // Affiche le bilan du jour : tâches faites et sessions Pomodoro terminées.
 // Ce fichier est chargé après taches.js : il utilise "taches" et "dateDuJour()"
-// qui viennent de ce fichier.
+// qui viennent de taches.js.
 
 const CLE_POMODOROS = "revisions-pomodoros";
 
