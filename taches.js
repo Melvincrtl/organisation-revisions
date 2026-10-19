@@ -18,9 +18,7 @@ let taches = lireDonnees(CLE_TACHES, []);
 const formulaire = document.getElementById("form-tache");
 const champTitre = document.getElementById("champ-titre");
 const champMatiere = document.getElementById("champ-matiere");
-const champJour = document.getElementById("champ-jour");
-const champMois = document.getElementById("champ-mois");
-const champAnnee = document.getElementById("champ-annee");
+const champEcheance = document.getElementById("champ-echeance");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
 const boutonAjouter = document.getElementById("bouton-ajouter");
@@ -42,77 +40,6 @@ function dateDuJour() {
 function formaterDate(dateTexte) {
   const [annee, mois, jour] = dateTexte.split("-");
   return `${jour}/${mois}/${annee}`;
-}
-
-// ===== Choix de l'échéance : listes jour / mois / année =====
-
-const NOMS_MOIS = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
-
-// Ajoute une option (un choix) dans une liste déroulante
-function ajouterOption(liste, valeur, texte) {
-  const option = document.createElement("option");
-  option.value = valeur;
-  option.textContent = texte;
-  liste.append(option);
-}
-
-// Remplit les listes des mois et des années (une seule fois, au chargement)
-function remplirMoisEtAnnees() {
-  for (let i = 0; i < 12; i++) {
-    ajouterOption(champMois, i + 1, NOMS_MOIS[i]);
-  }
-  const anneeActuelle = new Date().getFullYear();
-  for (let annee = anneeActuelle; annee <= anneeActuelle + 2; annee++) {
-    ajouterOption(champAnnee, annee, annee);
-  }
-}
-
-// Remplit la liste des jours selon le mois choisi (28, 29, 30 ou 31 jours)
-function mettreAJourJours() {
-  const jourChoisi = Number(champJour.value) || 1;
-  const annee = Number(champAnnee.value);
-  const mois = Number(champMois.value);
-  // Astuce : le "jour 0" du mois suivant = le dernier jour du mois choisi
-  const nombreDeJours = new Date(annee, mois, 0).getDate();
-
-  champJour.innerHTML = "";
-  for (let jour = 1; jour <= nombreDeJours; jour++) {
-    ajouterOption(champJour, jour, jour);
-  }
-  // On garde le jour choisi s'il existe encore (ex. : 31 → 30 en avril)
-  champJour.value = Math.min(jourChoisi, nombreDeJours);
-}
-
-// Place les trois listes sur la date d'aujourd'hui
-function choisirAujourdhui() {
-  const maintenant = new Date();
-  champAnnee.value = maintenant.getFullYear();
-  champMois.value = maintenant.getMonth() + 1;
-  mettreAJourJours(); // crée les jours du mois en cours
-  champJour.value = maintenant.getDate();
-}
-
-// Assemble la date choisie au format AAAA-MM-JJ
-function lireEcheance() {
-  const mois = String(champMois.value).padStart(2, "0");
-  const jour = String(champJour.value).padStart(2, "0");
-  return `${champAnnee.value}-${mois}-${jour}`;
-}
-
-// L'inverse : place les trois listes sur une date "AAAA-MM-JJ"
-function positionnerEcheance(dateTexte) {
-  const [annee, mois, jour] = dateTexte.split("-").map(Number); // "05" → 5
-  // Une échéance d'une année absente de la liste (ex. : l'an dernier) : on l'ajoute
-  if (![...champAnnee.options].some((option) => Number(option.value) === annee)) {
-    ajouterOption(champAnnee, annee, annee);
-  }
-  champAnnee.value = annee;
-  champMois.value = mois;
-  mettreAJourJours(); // le bon nombre de jours pour ce mois
-  champJour.value = jour;
 }
 
 function enregistrerTaches() {
@@ -243,7 +170,7 @@ function commencerModification(id) {
   idEnEdition = id;
   champTitre.value = tache.titre;
   champMatiere.value = tache.matiere;
-  positionnerEcheance(tache.echeance);
+  champEcheance.value = tache.echeance; // le calendrier accepte directement "AAAA-MM-JJ"
   boutonAjouter.textContent = "Enregistrer les modifications";
   boutonAnnuler.hidden = false;
   // Sur téléphone, le formulaire peut être plus haut : on remonte jusqu'à lui
@@ -268,7 +195,7 @@ function modifierTache(id, titre, matiere, echeance) {
 function quitterModification() {
   idEnEdition = null;
   formulaire.reset();
-  choisirAujourdhui(); // reset() a modifié les listes : on remet aujourd'hui
+  champEcheance.value = dateDuJour(); // reset() a vidé la date : on remet aujourd'hui
   boutonAjouter.textContent = "Ajouter la tâche";
   boutonAnnuler.hidden = true;
 }
@@ -286,20 +213,26 @@ formulaire.addEventListener("submit", (evenement) => {
   }
 
   if (idEnEdition === null) {
-    ajouterTache(titre, matiere, lireEcheance());
+    ajouterTache(titre, matiere, champEcheance.value);
   } else {
-    modifierTache(idEnEdition, titre, matiere, lireEcheance());
+    modifierTache(idEnEdition, titre, matiere, champEcheance.value);
   }
   quitterModification(); // vide le formulaire et remet le mode ajout
   champTitre.focus();
 });
 
-// Quand on change de mois ou d'année, le nombre de jours peut changer
-champMois.addEventListener("change", mettreAJourJours);
-champAnnee.addEventListener("change", mettreAJourJours);
+// Un clic n'importe où sur le champ de date ouvre le calendrier
+// (sans ça, il faut viser la petite icône)
+champEcheance.addEventListener("click", () => {
+  if (champEcheance.showPicker) { // les navigateurs anciens n'ont pas cette fonction
+    try {
+      champEcheance.showPicker();
+    } catch (erreur) {
+      // certains navigateurs refusent : le champ reste utilisable normalement
+    }
+  }
+});
 
-// Au chargement : on prépare les listes, échéance proposée = aujourd'hui,
-// puis premier affichage des tâches
-remplirMoisEtAnnees();
-choisirAujourdhui();
+// Au chargement : échéance proposée = aujourd'hui, puis premier affichage
+champEcheance.value = dateDuJour();
 afficherTaches();

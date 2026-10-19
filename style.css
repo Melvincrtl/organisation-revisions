@@ -69,7 +69,8 @@ label {
   font-size: 0.95rem;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="date"] {
   font: inherit;
   font-weight: normal;
   padding: 10px;
@@ -78,41 +79,19 @@ input[type="text"] {
   width: 100%;
 }
 
-/* ===== Échéance : jour / mois / année ===== */
-.choix-date {
-  border: none;   /* un fieldset a une bordure par défaut : on l'enlève */
-  margin: 0;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-}
-
-.choix-date legend {
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0;
-  margin-bottom: 4px;
-}
-
-.choix-date select {
-  font: inherit;
-  font-size: 1.15rem; /* gros caractères, faciles à lire */
-  padding: 12px 8px;
-  border: 1px solid var(--bordure);
-  border-radius: 8px;
-  background: var(--carte);
-  color: var(--texte);
+/* Champ de date plus grand et plus facile à toucher */
+input[type="date"] {
+  font-size: 1.15rem;
+  padding: 14px 12px;
+  min-height: 54px;
   cursor: pointer;
 }
 
-/* Le mois prend plus de place que le jour et l'année */
-#champ-jour,
-#champ-annee {
-  flex: 1;
-}
-
-#champ-mois {
-  flex: 2;
+/* Icône calendrier agrandie (Chrome, Edge, Safari) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
 }
 
 button {

@@ -52,13 +52,10 @@
           Matière
           <input type="text" id="champ-matiere" required placeholder="Ex. : Comptabilité financière">
         </label>
-        <!-- Échéance : trois listes déroulantes, remplies par taches.js -->
-        <fieldset class="choix-date">
-          <legend>Échéance</legend>
-          <select id="champ-jour" aria-label="Jour"></select>
-          <select id="champ-mois" aria-label="Mois"></select>
-          <select id="champ-annee" aria-label="Année"></select>
-        </fieldset>
+        <label>
+          Échéance
+          <input type="date" id="champ-echeance" required>
+        </label>
         <button type="submit" id="bouton-ajouter">Ajouter la tâche</button>
         <!-- Visible seulement pendant la modification d'une tâche -->
         <button type="button" id="bouton-annuler" class="bouton-secondaire" hidden>Annuler</button>
