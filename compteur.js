@@ -29,6 +29,9 @@ function afficherCompteur() {
   // On ne garde que les tâches cochées aujourd'hui, puis on les compte
   const tachesFaitesAujourdhui = taches.filter((t) => t.faite && t.faiteLe === aujourdhui);
 
+  // Parmi elles, combien sont des examens
+  const examensPasses = tachesFaitesAujourdhui.filter((t) => t.examen === true).length;
+
   const nombreTaches = tachesFaitesAujourdhui.length;
   const nombrePomodoros = pomodorosParJour[aujourdhui] || 0;
 
@@ -36,7 +39,12 @@ function afficherCompteur() {
   affichageCompteurPomodoros.textContent = nombrePomodoros;
 
   // Singulier ou pluriel (en français, 0 et 1 sont au singulier)
-  libelleTaches.textContent = nombreTaches > 1 ? "tâches faites" : "tâche faite";
+  let texteTaches = nombreTaches > 1 ? "tâches faites" : "tâche faite";
+  if (examensPasses > 0) {
+    // Ex. : "4 tâches faites dont 1 examen passé"
+    texteTaches += " dont " + examensPasses + (examensPasses > 1 ? " examens passés" : " examen passé");
+  }
+  libelleTaches.textContent = texteTaches;
   libellePomodoros.textContent = nombrePomodoros > 1 ? "sessions Pomodoro" : "session Pomodoro";
 }
 
