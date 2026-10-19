@@ -16,7 +16,7 @@ Double-cliquer sur `index.html` : la page s'ouvre dans le navigateur.
 | `style.css`   | Apparence (adaptée au téléphone)                      |
 | `stockage.js` | Lire / écrire les données dans le localStorage        |
 | `taches.js`   | Liste de tâches (ajout, modification, fait / à faire, suppression) |
-| `minuteur.js` | Minuteur Pomodoro 25 / 5 min avec alerte              |
+| `minuteur.js` | Minuteur Pomodoro (travail de 20 min à 2 h, pause adaptée) avec alerte |
 | `compteur.js` | Bilan du jour : tâches faites et sessions Pomodoro    |
 
 ## Avancement

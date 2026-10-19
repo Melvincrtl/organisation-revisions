@@ -234,6 +234,34 @@ button {
   border: 1px solid var(--bordure);
 }
 
+/* Réglage de la durée : libellé, champ et "min" sur une ligne */
+.minuteur-reglage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.minuteur-reglage input {
+  font: inherit;
+  width: 80px;
+  padding: 8px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.minuteur-reglage input:disabled {
+  background: var(--fond);
+  color: var(--discret);
+}
+
+.minuteur-aide {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+}
+
 /* Alerte visuelle de fin de période : le bloc clignote en jaune */
 #bloc-minuteur.alerte {
   animation: clignoter 1s ease-in-out 5;

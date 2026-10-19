@@ -1,12 +1,39 @@
 // minuteur.js
-// Minuteur Pomodoro : 25 min de travail, puis 5 min de pause, et ainsi de suite.
+// Minuteur Pomodoro : une période de travail (durée réglable, 25 min par défaut),
+// puis une pause dont la durée dépend du travail, et ainsi de suite.
 
-const DUREE_TRAVAIL = 25 * 60 * 1000; // en millisecondes (25 min)
-const DUREE_PAUSE = 5 * 60 * 1000;    // 5 min
+// ===== Durées =====
+
+const CLE_DUREE = "revisions-duree-travail";
+const MINUTES_MIN = 20;  // le travail dure au moins 20 min…
+const MINUTES_MAX = 120; // …et au plus 2 h
+
+// Durée du travail choisie, en minutes (25 si rien d'enregistré ou valeur incorrecte)
+let minutesTravail = lireDonnees(CLE_DUREE, 25);
+if (!Number.isInteger(minutesTravail) || minutesTravail < MINUTES_MIN || minutesTravail > MINUTES_MAX) {
+  minutesTravail = 25;
+}
+
+// Durée de la pause selon la durée du travail
+function minutesPause(minutes) {
+  if (minutes < 40) {
+    return 5;  // de 20 à 39 min de travail
+  }
+  if (minutes < 60) {
+    return 10; // de 40 à 59 min
+  }
+  return 20;   // de 1 h à 2 h
+}
+
+// Durée complète d'une phase ("travail" ou "pause"), en millisecondes
+function dureeDe(laPhase) {
+  const minutes = laPhase === "travail" ? minutesTravail : minutesPause(minutesTravail);
+  return minutes * 60 * 1000;
+}
 
 // L'état du minuteur tient en trois variables :
 let phase = "travail";               // "travail" ou "pause"
-let tempsRestant = DUREE_TRAVAIL;    // temps qu'il reste, en millisecondes
+let tempsRestant = dureeDe("travail"); // temps qu'il reste, en millisecondes
 let heureDeFin = null;               // quand la période se termine (null = minuteur arrêté)
 let intervalle = null;               // la "boucle" qui met l'affichage à jour
 
@@ -16,6 +43,8 @@ const affichageTemps = document.getElementById("minuteur-temps");
 const affichageMessage = document.getElementById("minuteur-message");
 const boutonDemarrer = document.getElementById("bouton-demarrer");
 const boutonReinitialiser = document.getElementById("bouton-reinitialiser");
+const champDuree = document.getElementById("champ-duree");
+const texteReglage = document.getElementById("texte-reglage");
 
 const TITRE_PAGE = document.title; // "Mes révisions", pour le remettre ensuite
 
@@ -31,9 +60,9 @@ function estEnMarche() {
   return heureDeFin !== null;
 }
 
-// Durée complète d'une phase ("travail" ou "pause")
-function dureeDe(laPhase) {
-  return laPhase === "travail" ? DUREE_TRAVAIL : DUREE_PAUSE;
+// Vrai si la phase actuelle n'a pas encore commencé (ni en marche, ni en pause en cours de route)
+function estAuDebut() {
+  return !estEnMarche() && tempsRestant === dureeDe(phase);
 }
 
 // ===== Sauvegarde dans le navigateur =====
@@ -74,7 +103,7 @@ function etatValide(etat) {
 function restaurerMinuteur() {
   const etat = lireDonnees(CLE_MINUTEUR, null);
   if (!etatValide(etat)) {
-    return; // rien d'enregistré ou données abîmées : on garde 25:00, travail
+    return; // rien d'enregistré ou données abîmées : on garde la phase travail au début
   }
 
   phase = etat.phase;
@@ -112,6 +141,32 @@ function afficherMinuteur() {
   if (estEnMarche()) {
     document.title = formaterTemps(tempsRestant) + " · " + affichagePhase.textContent;
   }
+
+  // Réglage de la durée : modifiable seulement avant de commencer une phase
+  champDuree.disabled = !estAuDebut();
+  if (estAuDebut()) {
+    texteReglage.textContent = "Pause : " + minutesPause(minutesTravail) + " min (travail de 20 min à 2 h)";
+  } else {
+    texteReglage.textContent = "Réinitialise le minuteur pour changer la durée";
+  }
+}
+
+// Quand on change la durée du travail
+function changerDuree() {
+  let minutes = Math.round(Number(champDuree.value)); // le champ contient du texte : on le convertit
+  if (champDuree.value === "" || !Number.isFinite(minutes)) {
+    minutes = minutesTravail; // champ vidé ou incompréhensible : on garde l'ancienne durée
+  }
+  // On ramène la valeur entre 20 et 120 minutes
+  minutes = Math.min(Math.max(minutes, MINUTES_MIN), MINUTES_MAX);
+
+  minutesTravail = minutes;
+  champDuree.value = minutes; // affiche la valeur corrigée (ex. : 10 → 20)
+  ecrireDonnees(CLE_DUREE, minutesTravail);
+
+  tempsRestant = dureeDe(phase); // la phase en attente prend la nouvelle durée
+  enregistrerMinuteur();
+  afficherMinuteur();
 }
 
 // Appelée plusieurs fois par seconde quand le minuteur tourne
@@ -150,7 +205,7 @@ function reinitialiser() {
     heureDeFin = null;
   }
   phase = "travail";
-  tempsRestant = DUREE_TRAVAIL;
+  tempsRestant = dureeDe("travail");
   document.title = TITRE_PAGE;
   cacherAlerte();
   enregistrerMinuteur();
@@ -166,11 +221,11 @@ function finDePeriode() {
   if (phase === "travail") {
     ajouterSessionPomodoro(); // une session de travail complète (compteur.js)
     phase = "pause";
-    tempsRestant = DUREE_PAUSE;
+    tempsRestant = dureeDe("pause");
     montrerAlerte("Bravo, session terminée ! Place à la pause.", "⏰ Pause !");
   } else {
     phase = "travail";
-    tempsRestant = DUREE_TRAVAIL;
+    tempsRestant = dureeDe("travail");
     montrerAlerte("Pause terminée. On reprend le travail !", "⏰ Au travail !");
   }
 
@@ -244,6 +299,10 @@ boutonDemarrer.addEventListener("click", () => {
 });
 
 boutonReinitialiser.addEventListener("click", reinitialiser);
+
+// "change" : quand on quitte le champ ou qu'on appuie sur Entrée (pas à chaque chiffre tapé)
+champDuree.addEventListener("change", changerDuree);
+champDuree.value = minutesTravail;
 
 // Si le minuteur a repris tout seul après un rechargement, le son n'est pas
 // encore autorisé : on le prépare au premier clic n'importe où sur la page.
