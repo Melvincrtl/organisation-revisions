@@ -47,6 +47,52 @@ h2 {
   color: var(--discret);
 }
 
+/* ===== Mise en page : une colonne (téléphone) ou deux colonnes (grand écran) =====
+   Le HTML est dans l'ordre du téléphone : minuteur, Aujourd'hui, planning, tâches,
+   synchronisation. Sur grand écran, la grille place le planning à droite. */
+
+/* Téléphone et petite fenêtre : une colonne, boutons faciles à toucher */
+@media (max-width: 899px) {
+  button {
+    min-height: 44px;
+  }
+}
+
+/* Grand écran (900 px et plus) : deux colonnes */
+@media (min-width: 900px) {
+  main {
+    max-width: 1400px; /* exploite l'écran, mais reste lisible sur un très grand écran */
+    display: grid;
+    /* À gauche : 440 à 520 px ; à droite : tout le reste ("minmax(0, …)" évite qu'un
+       contenu trop large ne déborde de la colonne) */
+    grid-template-columns: minmax(440px, 520px) minmax(0, 1fr);
+    /* Lignes : titre, minuteur, Aujourd'hui, tâches, synchronisation, puis une ligne
+       "élastique" (1fr) qui absorbe la place en trop, pour que les blocs de gauche
+       restent collés les uns aux autres même si le planning est plus haut */
+    grid-template-rows: auto auto auto auto auto 1fr;
+    column-gap: 24px;
+  }
+
+  h1 { grid-column: 1 / -1; grid-row: 1; } /* le titre sur toute la largeur */
+
+  #bloc-minuteur  { grid-column: 1; grid-row: 2; }
+  #bloc-compteur  { grid-column: 1; grid-row: 3; }
+  #bloc-taches    { grid-column: 1; grid-row: 4; }
+  #bloc-synchro   { grid-column: 1; grid-row: 5; }
+
+  /* Le planning occupe la colonne de droite sur toute la hauteur… */
+  #bloc-planning {
+    grid-column: 2;
+    grid-row: 2 / -1;
+    align-self: start;          /* sa hauteur suit son contenu */
+    /* …et reste visible quand on fait défiler les tâches */
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px); /* jamais plus haut que l'écran… */
+    overflow-y: auto;               /* …sinon il défile tout seul */
+  }
+}
+
 /* ===== Les blocs (cartes blanches) ===== */
 .bloc {
   background: var(--carte);

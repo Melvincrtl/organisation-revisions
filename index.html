@@ -31,7 +31,7 @@
     </section>
 
     <!-- ===== Bloc : compteur du jour ===== -->
-    <section class="bloc">
+    <section class="bloc" id="bloc-compteur">
       <h2>Aujourd'hui</h2>
       <div class="compteurs">
         <div class="compteur">
@@ -45,8 +45,16 @@
       </div>
     </section>
 
+    <!-- ===== Bloc : planning de la semaine (géré par planning.js) =====
+         Placé ici dans le HTML pour l'ordre sur téléphone (après « Aujourd'hui »,
+         avant les tâches). Sur grand écran, style.css le place dans la colonne de droite. -->
+    <section class="bloc" id="bloc-planning">
+      <h2>Planning</h2>
+      <p class="discret">Le planning de la semaine s'affichera ici.</p>
+    </section>
+
     <!-- ===== Bloc : liste de tâches ===== -->
-    <section class="bloc">
+    <section class="bloc" id="bloc-taches">
       <h2>Tâches</h2>
 
       <form id="form-tache">
