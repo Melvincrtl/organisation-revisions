@@ -86,12 +86,15 @@ h2 {
   #bloc-planning {
     grid-column: 2;
     grid-row: 2 / -1;
-    align-self: start;          /* sa hauteur suit son contenu */
-    /* …et reste visible quand on fait défiler les tâches */
+    align-self: start;
+    /* Élément principal : toute la hauteur de l'écran, et toujours visible
+       quand on fait défiler les tâches */
     position: sticky;
     top: 16px;
-    max-height: calc(100vh - 32px); /* jamais plus haut que l'écran… */
-    overflow-y: auto;               /* …sinon il défile tout seul */
+    height: calc(100vh - 32px);
+    overflow-y: auto;            /* s'il y a trop de contenu, il défile tout seul */
+    display: flex;
+    flex-direction: column;      /* la semaine (.semaine) prend la hauteur restante */
   }
 }
 
@@ -452,28 +455,101 @@ input[type="email"] {
   container-type: inline-size;
 }
 
-/* Formulaire : titre et matière sur toute la largeur ; sur un planning étroit
-   (téléphone), le jour seul sur sa ligne puis début et fin côte à côte */
+/* Titre "Planning" et bouton "+ Ajouter un créneau" sur une ligne */
+.planning-titre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.planning-titre h2 {
+  margin: 0;
+}
+
+.planning-titre button {
+  padding: 6px 12px;
+}
+
+/* Formulaire compact : petits libellés, champs serrés.
+   Téléphone : 2 colonnes (tâche, titre, matière et jour sur toute la largeur) */
 .form-creneau {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  background: var(--fond);
 }
 
-.form-creneau .champ-large,
-.form-creneau .champ-jour {
+/* "display: grid" l'emporte sur l'attribut hidden : on le précise */
+.form-creneau[hidden] {
+  display: none;
+}
+
+.form-creneau label {
+  font-size: 0.8rem;
+  gap: 2px;
+}
+
+.form-creneau input,
+.form-creneau select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 6px 8px;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  background: var(--carte);
+}
+
+/* Champ lié à une tâche : rempli automatiquement, non modifiable */
+.form-creneau input:disabled {
+  color: var(--discret);
+}
+
+.champ-tache,
+.champ-titre,
+.champ-matiere,
+.champ-jour,
+.message-creneau,
+.form-creneau-boutons {
   grid-column: 1 / -1;
 }
 
-/* Planning plus large : jour, début et fin sur une seule ligne */
-@container (min-width: 480px) {
+.form-creneau-boutons {
+  display: flex;
+  gap: 8px;
+}
+
+.form-creneau-boutons button {
+  flex: 1;
+  padding: 6px 10px;
+}
+
+/* Planning plus large (Mac) : tout sur deux lignes
+   [tâche ][tâche ][titre ][titre ][matière][matière]
+   [jour  ][jour  ][début ][fin   ][boutons][boutons] */
+@container (min-width: 600px) {
   .form-creneau {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
-  .form-creneau .champ-jour {
-    grid-column: auto;
+  .champ-tache,
+  .champ-titre,
+  .champ-matiere,
+  .champ-jour,
+  .form-creneau-boutons {
+    grid-column: span 2;
+  }
+
+  .form-creneau-boutons {
+    align-self: end;
   }
 }
 
@@ -484,13 +560,6 @@ input[type="time"] {
   border: 1px solid var(--bordure);
   border-radius: 8px;
   width: 100%;
-  min-width: 0;
-}
-
-.form-creneau input[type="date"] {
-  font-size: 1rem;       /* le grand champ de date des tâches serait trop large ici */
-  padding: 10px;
-  min-height: 0;
   min-width: 0;
 }
 
@@ -602,12 +671,12 @@ input[type="time"] {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 6px;
-    align-items: start;
+    flex: 1 0 auto;  /* toute la hauteur restante du bloc : colonnes hautes, comme un agenda */
+    min-height: 360px;
   }
 
   .jour {
-    min-height: 120px;
-    padding: 6px;
+    padding: 6px;    /* les 7 colonnes s'étirent à la même hauteur */
   }
 
   .jour-titre,
@@ -624,4 +693,52 @@ input[type="time"] {
   .creneau-heures::after {
     content: none;
   }
+}
+
+/* Échéances de tâches reportées sur le planning (en haut du jour, sans heure) */
+.liste-echeances {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+}
+
+.echeance {
+  margin-bottom: 4px;
+  padding: 3px 6px;
+  border-left: 3px solid var(--retard);
+  border-radius: 4px;
+  background: var(--carte);
+  font-size: 0.85rem;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.echeance-etiquette {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--retard);
+}
+
+/* Le badge EXAM, un peu plus petit dans le planning */
+.jour .badge-examen {
+  font-size: 0.65rem;
+  padding: 0 4px;
+}
+
+/* Tâche faite (échéance ou créneau lié) : barrée et grisée */
+.echeance.fait,
+.creneau.fait {
+  color: var(--discret);
+  text-decoration: line-through;
+}
+
+.echeance.fait {
+  border-left-color: var(--bordure);
+}
+
+.echeance.fait .echeance-etiquette {
+  color: var(--discret);
 }

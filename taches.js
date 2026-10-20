@@ -78,6 +78,7 @@ function enregistrerTaches() {
   ecrireDonnees(CLE_TACHES, taches);
   afficherCompteur(); // les tâches ont changé : le compteur du jour aussi (compteur.js)
   signalerModificationLocale(); // à envoyer aux autres appareils (synchro.js)
+  rafraichirPlanning(); // échéances et titres des tâches affichés dans le planning (planning.js)
 }
 
 // Remplace toute la liste par celle reçue d'un autre appareil (appelée par synchro.js).
@@ -90,6 +91,7 @@ function remplacerTaches(nouvellesTaches) {
     quitterModification();
   }
   afficherTaches();
+  rafraichirPlanning(); // planning.js
 }
 
 // Redessine toute la liste à partir du tableau "taches"
@@ -180,7 +182,13 @@ function afficherTaches() {
     boutonSupprimer.textContent = "Supprimer";
     boutonSupprimer.addEventListener("click", () => supprimerTache(tache.id));
 
-    actions.append(boutonModifier, boutonSupprimer);
+    // Planifier : ouvre le formulaire du planning, déjà rempli avec cette tâche (planning.js)
+    const boutonPlanifier = document.createElement("button");
+    boutonPlanifier.className = "bouton-modifier";
+    boutonPlanifier.textContent = "Planifier";
+    boutonPlanifier.addEventListener("click", () => planifierTache(tache.id));
+
+    actions.append(boutonModifier, boutonPlanifier, boutonSupprimer);
     ligne.append(caseFaite, infos, actions);
     listeTaches.append(ligne);
   }
