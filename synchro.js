@@ -276,11 +276,31 @@ function nombreDeTaches(n) {
   return n + (n > 1 ? " tâches" : " tâche");
 }
 
+// Ex. : "5 tâches, 1 h 15 de travail aujourd'hui"
+function resumeVersion(nombreTaches, minutes) {
+  return nombreDeTaches(nombreTaches) + ", " + formaterDureeTravail(minutes) + " de travail aujourd'hui"; // compteur.js
+}
+
+// mis_a_jour → " (modifiée le 20/10 à 22:41)", en heure de cet appareil ("" si illisible)
+function formaterDateModification(misAJour) {
+  const date = new Date(misAJour);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const deuxChiffres = (n) => String(n).padStart(2, "0");
+  return " (modifiée le " + deuxChiffres(date.getDate()) + "/" + deuxChiffres(date.getMonth() + 1) +
+    " à " + deuxChiffres(date.getHours()) + ":" + deuxChiffres(date.getMinutes()) + ")";
+}
+
 function proposerChoix(ligne) {
   conflit = ligne;
+  const aujourdhui = dateDuJour();
   texteConflit.textContent =
-    "Deux versions différentes existent. Cet appareil : " + nombreDeTaches(taches.length) +
-    ". En ligne : " + nombreDeTaches(ligne.donnees.taches.length) +
+    "Deux versions différentes existent. Cet appareil : " +
+    resumeVersion(taches.length, minutesDuJour(aujourdhui)) +
+    ". En ligne : " +
+    resumeVersion(ligne.donnees.taches.length, minutesDansHistorique(ligne.donnees.minutesParJour, aujourdhui)) +
+    formaterDateModification(ligne.mis_a_jour) +
     ". Celle que tu gardes remplacera l'autre.";
   zoneConflit.hidden = false;
   afficherStatut("En attente de ton choix");

@@ -22,10 +22,16 @@ const affichageCompteurTaches = document.getElementById("compteur-taches");
 const affichageCompteurTemps = document.getElementById("compteur-temps");
 const libelleTaches = document.getElementById("libelle-taches");
 
-// Minutes travaillées un jour donné (0 si rien ou valeur incorrecte)
-function minutesDuJour(jour) {
-  const minutes = minutesParJour[jour];
+// Minutes travaillées un jour donné, dans un historique { jour: minutes } quelconque
+// (0 si rien ou valeur incorrecte). Sert aussi à lire une version reçue (synchro.js).
+function minutesDansHistorique(historique, jour) {
+  const minutes = historique[jour];
   return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
+}
+
+// Minutes travaillées un jour donné, sur cet appareil
+function minutesDuJour(jour) {
+  return minutesDansHistorique(minutesParJour, jour);
 }
 
 // Transforme des minutes en texte : 45 → "45 min", 125 → "2 h 05"
