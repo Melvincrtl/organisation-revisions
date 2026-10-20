@@ -45,4 +45,4 @@ Pour tester en local (avant publication), ajouter l'adresse locale (par exemple
 - [x] Durée de travail réglable de 20 min à 2 h (boutons − / +), pause adaptée : 5, 10 ou 20 min
 - [x] Compteur du jour : temps de travail réel en minutes (« 2 h 05 ») à la place du nombre de sessions
 - [x] Session abandonnée (fin depuis plus de 30 min : page fermée, onglet ou appareil en veille) : pas comptée, retour au travail
-- [x] Synchronisation Mac / téléphone avec Supabase (branche `synchro`, à tester avant publication)
+- [x] Synchronisation Mac / téléphone avec Supabase (connexion par lien envoyé par mail)
