@@ -11,6 +11,7 @@
   --alerte-fond: #fef3c7;
   --examen: #c2410c;
   --examen-fond: #fff7ed;
+  --accent-fond: #eff6ff; /* fond bleu très clair (jour d'aujourd'hui) */
 }
 
 /* ===== Base ===== */
@@ -442,4 +443,185 @@ input[type="email"] {
 
 .synchro-statut.erreur {
   color: var(--retard);
+}
+
+/* ===== Planning ===== */
+/* Le bloc sert de "conteneur" : la disposition des jours dépend de SA largeur
+   (et non de celle de la fenêtre), grâce aux container queries plus bas */
+#bloc-planning {
+  container-type: inline-size;
+}
+
+/* Formulaire : titre et matière sur toute la largeur ; sur un planning étroit
+   (téléphone), le jour seul sur sa ligne puis début et fin côte à côte */
+.form-creneau {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-creneau .champ-large,
+.form-creneau .champ-jour {
+  grid-column: 1 / -1;
+}
+
+/* Planning plus large : jour, début et fin sur une seule ligne */
+@container (min-width: 480px) {
+  .form-creneau {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .form-creneau .champ-jour {
+    grid-column: auto;
+  }
+}
+
+input[type="time"] {
+  font: inherit;
+  font-weight: normal;
+  padding: 10px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.form-creneau input[type="date"] {
+  font-size: 1rem;       /* le grand champ de date des tâches serait trop large ici */
+  padding: 10px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.message-creneau {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--retard);
+  font-weight: 600;
+}
+
+/* Bandeau : ‹  Semaine du … au …  ›  Cette semaine */
+.planning-entete {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.titre-semaine {
+  flex: 1;
+  margin: 0;
+  font-weight: 700;
+  text-align: center;
+}
+
+.planning-entete button {
+  padding: 6px 12px;
+}
+
+/* Planning étroit (téléphone) : le titre de la semaine seul sur sa ligne,
+   au-dessus des boutons, pour qu'il ne soit pas écrasé entre eux */
+@container (max-width: 479px) {
+  .titre-semaine {
+    order: -1;        /* affiché en premier dans le bandeau */
+    flex-basis: 100%; /* toute la largeur : les boutons passent à la ligne suivante */
+  }
+
+  #bouton-cette-semaine {
+    flex: 1;
+  }
+}
+
+/* Les jours : empilés par défaut (téléphone, colonne étroite) */
+.semaine {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jour {
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0; /* un texte long passe à la ligne au lieu d'élargir la colonne */
+}
+
+/* Le jour d'aujourd'hui : bordure et fond bleus */
+.jour.aujourdhui {
+  border: 2px solid var(--accent);
+  background: var(--accent-fond);
+}
+
+.jour-titre {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.jour.aujourdhui .jour-titre {
+  color: var(--accent);
+}
+
+.jour-vide {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.liste-creneaux {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.creneau {
+  padding: 4px 0;
+  font-size: 0.9rem;
+  overflow-wrap: break-word; /* un mot trop long passe à la ligne… */
+  hyphens: auto;             /* …avec un trait d'union, coupé en français (lang="fr") */
+}
+
+.creneau + .creneau {
+  border-top: 1px solid var(--bordure);
+}
+
+.creneau-heures {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Jours empilés : tout sur une ligne, "14:00–15:30 · Audit · Relire le cours" */
+.creneau-heures::after {
+  content: " · ";
+  font-weight: normal;
+}
+
+/* Planning assez large (environ 760 px de contenu) : les 7 jours en colonnes */
+@container (min-width: 760px) {
+  .semaine {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    align-items: start;
+  }
+
+  .jour {
+    min-height: 120px;
+    padding: 6px;
+  }
+
+  .jour-titre,
+  .creneau {
+    font-size: 0.85rem;
+  }
+
+  /* En colonne étroite, l'heure sur sa propre ligne (jamais coupée), puis matière et titre */
+  .creneau-heures {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .creneau-heures::after {
+    content: none;
+  }
 }

@@ -50,7 +50,43 @@
          avant les tâches). Sur grand écran, style.css le place dans la colonne de droite. -->
     <section class="bloc" id="bloc-planning">
       <h2>Planning</h2>
-      <p class="discret">Le planning de la semaine s'affichera ici.</p>
+
+      <!-- Ajout d'un créneau de révision -->
+      <form id="form-creneau" class="form-creneau">
+        <label class="champ-large">
+          Titre
+          <input type="text" id="champ-creneau-titre" required placeholder="Ex. : Relire le cours d'audit">
+        </label>
+        <label class="champ-large">
+          Matière
+          <input type="text" id="champ-creneau-matiere" required placeholder="Ex. : Audit">
+        </label>
+        <label class="champ-jour">
+          Jour
+          <input type="date" id="champ-creneau-jour" required>
+        </label>
+        <label>
+          Début
+          <input type="time" id="champ-creneau-debut" required>
+        </label>
+        <label>
+          Fin
+          <input type="time" id="champ-creneau-fin" required>
+        </label>
+        <p id="message-creneau" class="message-creneau" hidden></p>
+        <button type="submit" id="bouton-ajouter-creneau" class="champ-large">Ajouter le créneau</button>
+      </form>
+
+      <!-- Bandeau : semaine affichée et navigation -->
+      <div class="planning-entete">
+        <button type="button" id="bouton-semaine-precedente" class="bouton-secondaire" aria-label="Semaine précédente">‹</button>
+        <p id="titre-semaine" class="titre-semaine"></p>
+        <button type="button" id="bouton-semaine-suivante" class="bouton-secondaire" aria-label="Semaine suivante">›</button>
+        <button type="button" id="bouton-cette-semaine" class="bouton-secondaire">Cette semaine</button>
+      </div>
+
+      <!-- Les 7 jours, remplis par planning.js -->
+      <div id="semaine" class="semaine"></div>
     </section>
 
     <!-- ===== Bloc : liste de tâches ===== -->
@@ -140,6 +176,8 @@
   <!-- compteur.js avant minuteur.js : au chargement, le minuteur peut
        avoir besoin de compter une session terminée pendant l'absence -->
   <script src="compteur.js"></script>
+  <!-- planning.js après taches.js (dateDuJour) et compteur.js (formaterDureeTravail) -->
+  <script src="planning.js"></script>
   <script src="minuteur.js"></script>
 </body>
 </html>
