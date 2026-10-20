@@ -685,7 +685,8 @@ input[type="time"] {
 @container (min-width: 760px) {
   .semaine {
     display: grid;
-    grid-template-columns: 2.6rem repeat(7, minmax(0, 1fr));
+    /* Les jours avec des créneaux qui se chevauchent sont plus larges (planning.js) */
+    grid-template-columns: 2.6rem var(--colonnes-jours, repeat(7, minmax(0, 1fr)));
     /* La ligne des heures prend toute la hauteur restante, et au moins 40 px par heure */
     grid-template-rows: auto minmax(calc(var(--heures) * 40px), 1fr);
     column-gap: 4px;
@@ -749,7 +750,7 @@ input[type="time"] {
     height: calc(var(--duree) / var(--total) * 100%);
     left: calc(var(--voie) / var(--voies) * 100% + 2px);
     width: calc(100% / var(--voies) - 4px);
-    padding: 2px 4px;
+    padding: 2px 3px;
     border-left-width: 3px;
     border-radius: 4px;
     font-size: 0.75rem;
@@ -757,14 +758,30 @@ input[type="time"] {
     overflow: hidden; /* un créneau court montre le début du texte (le reste au survol) */
   }
 
-  /* En colonne étroite, l'heure sur sa propre ligne (jamais coupée), puis matière et titre */
+  /* En colonne étroite, l'heure sur sa propre ligne, puis matière et titre.
+     "14:30" et "–15:30" ne sont jamais coupés : si la place manque, la fin passe à la ligne */
   .creneau-heures {
     display: block;
+    font-size: 0.7rem;
+  }
+
+  .heure-morceau {
     white-space: nowrap;
   }
 
   .creneau-heures::after {
     content: none;
+  }
+
+  /* Créneaux côte à côte (étroits) : au survol, le créneau prend toute la largeur
+     de la colonne et passe au premier plan, pour lire son texte en entier */
+  .creneau:hover {
+    left: 2px;
+    width: calc(100% - 4px);
+    height: auto;  /* il s'allonge si son texte est plus long que sa durée */
+    min-height: calc(var(--duree) / var(--total) * 100%);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   }
 
   /* "Rien de prévu" est inutile : la colonne vide se voit dans la grille */

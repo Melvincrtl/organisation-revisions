@@ -288,6 +288,10 @@ function afficherPlanning() {
   }
   conteneurSemaine.append(axe);
 
+  // Largeur des colonnes : un jour où des créneaux se chevauchent est un peu plus large
+  // (×1,4 pour 2 créneaux côte à côte, ×1,8 pour 3 ou plus), sans trop rétrécir les autres jours
+  const largeurs = [];
+
   for (let i = 0; i < 7; i++) {
     const date = ajouterJours(lundiAffiche, i);
     const jour = joursSemaine[i];
@@ -336,13 +340,23 @@ function afficherPlanning() {
     const horaire = document.createElement("ul");
     horaire.className = "jour-horaire";
     const voies = calculerVoies(creneauxDuJour);
+    let voiesMax = 1;
     for (const creneau of creneauxDuJour) {
-      horaire.append(elementCreneau(creneau, bornes.debut, voies.get(creneau.id)));
+      const voie = voies.get(creneau.id);
+      voiesMax = Math.max(voiesMax, voie.voies);
+      horaire.append(elementCreneau(creneau, bornes.debut, voie));
     }
+    largeurs.push(1 + 0.4 * (Math.min(voiesMax, 3) - 1));
 
     blocJour.append(entete, horaire);
     conteneurSemaine.append(blocJour);
   }
+
+  // Ex. : "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) …" (des nombres seulement), lu par style.css
+  conteneurSemaine.style.setProperty(
+    "--colonnes-jours",
+    largeurs.map((parts) => "minmax(0, " + parts + "fr)").join(" ")
+  );
 }
 
 // Une échéance de tâche : "ÉCHÉANCE [EXAM]" puis "Audit · Rendre le dossier"
@@ -397,9 +411,17 @@ function elementCreneau(creneau, heureDebutGrille, voie) {
   // Texte complet au survol (utile pour un créneau court dont le texte est coupé)
   ligne.title = creneau.debut + "–" + creneau.fin + " · " + matiere + " · " + titre;
 
+  // Les heures en deux morceaux ("14:30" et "–15:30") : dans un créneau étroit,
+  // la fin passe à la ligne au lieu d'être coupée
   const heures = document.createElement("span");
   heures.className = "creneau-heures";
-  heures.textContent = creneau.debut + "–" + creneau.fin;
+  const heureDebut = document.createElement("span");
+  heureDebut.className = "heure-morceau";
+  heureDebut.textContent = creneau.debut;
+  const heureFin = document.createElement("span");
+  heureFin.className = "heure-morceau";
+  heureFin.textContent = "–" + creneau.fin;
+  heures.append(heureDebut, heureFin);
 
   const texte = document.createElement("span");
   texte.className = "creneau-texte";
