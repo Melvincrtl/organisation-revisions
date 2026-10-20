@@ -85,6 +85,8 @@
         <p id="message-creneau" class="message-creneau" hidden></p>
         <div class="form-creneau-boutons">
           <button type="submit" id="bouton-ajouter-creneau">Ajouter le créneau</button>
+          <!-- Visible seulement quand on modifie un créneau existant -->
+          <button type="button" id="bouton-supprimer-creneau" class="bouton-danger" hidden>Supprimer</button>
           <button type="button" id="bouton-fermer-creneau" class="bouton-secondaire">Fermer</button>
         </div>
       </form>
@@ -96,6 +98,8 @@
         <button type="button" id="bouton-semaine-suivante" class="bouton-secondaire" aria-label="Semaine suivante">›</button>
         <button type="button" id="bouton-cette-semaine" class="bouton-secondaire">Cette semaine</button>
       </div>
+      <!-- Total des créneaux de la semaine affichée (rempli par planning.js) -->
+      <p id="total-semaine" class="total-semaine"></p>
 
       <!-- Les 7 jours, remplis par planning.js -->
       <div id="semaine" class="semaine"></div>

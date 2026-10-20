@@ -524,6 +524,7 @@ input[type="email"] {
 
 .form-creneau-boutons {
   display: flex;
+  flex-wrap: wrap; /* si la place manque, les boutons passent à la ligne */
   gap: 8px;
 }
 
@@ -550,6 +551,17 @@ input[type="email"] {
 
   .form-creneau-boutons {
     align-self: end;
+  }
+
+  /* En modification, trois boutons (Enregistrer, Supprimer, Annuler) :
+     ils prennent toute une ligne pour rester lisibles */
+  .form-creneau-boutons:has(#bouton-supprimer-creneau:not([hidden])) {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .form-creneau-boutons:has(#bouton-supprimer-creneau:not([hidden])) button {
+    flex: 0 1 auto;
   }
 }
 
@@ -839,5 +851,52 @@ input[type="time"] {
 }
 
 .echeance.fait .echeance-etiquette {
+  color: var(--discret);
+}
+
+/* ===== Planning : créneaux cliquables, suppression, totaux ===== */
+
+/* Le contenu d'un créneau est un bouton (pour le modifier) : il garde l'apparence
+   du créneau, sans le style des autres boutons */
+.creneau-bouton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: inherit; /* une tâche faite reste barrée */
+  cursor: pointer;
+}
+
+.creneau-bouton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Bouton "Supprimer" du formulaire de créneau : rouge, pour ne pas le confondre */
+.bouton-danger {
+  background: transparent;
+  color: var(--retard);
+  border: 1px solid var(--retard);
+}
+
+/* Total planifié d'un jour, sous son nom */
+.jour-total {
+  margin: -2px 0 4px;
+  font-size: 0.75rem;
+  color: var(--discret);
+}
+
+/* Total planifié de la semaine, sous le bandeau */
+.total-semaine {
+  margin: -4px 0 10px;
+  text-align: center;
+  font-size: 0.85rem;
   color: var(--discret);
 }

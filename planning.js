@@ -125,6 +125,7 @@ const champCreneauFin = document.getElementById("champ-creneau-fin");
 const messageCreneau = document.getElementById("message-creneau");
 const titreSemaine = document.getElementById("titre-semaine");
 const conteneurSemaine = document.getElementById("semaine");
+const totalSemaine = document.getElementById("total-semaine");
 
 // La tâche reliée à un créneau (undefined si aucune, ou si elle a été supprimée)
 function tacheDuCreneau(creneau) {
@@ -156,6 +157,11 @@ const HEURE_FIN_GRILLE = 20;   // …à 20 h, et s'élargit si un créneau en so
 function minutesDepuisMinuit(heure) {
   const [h, m] = heure.split(":").map(Number);
   return h * 60 + m;
+}
+
+// Durée d'un créneau, en minutes
+function dureeCreneau(creneau) {
+  return minutesDepuisMinuit(creneau.fin) - minutesDepuisMinuit(creneau.debut);
 }
 
 // Heures de début et de fin de la grille pour les créneaux de la semaine affichée
@@ -291,6 +297,7 @@ function afficherPlanning() {
   // Largeur des colonnes : un jour où des créneaux se chevauchent est un peu plus large
   // (×1,4 pour 2 créneaux côte à côte, ×1,8 pour 3 ou plus), sans trop rétrécir les autres jours
   const largeurs = [];
+  let minutesSemaine = 0; // total planifié de la semaine
 
   for (let i = 0; i < 7; i++) {
     const date = ajouterJours(lundiAffiche, i);
@@ -329,6 +336,16 @@ function afficherPlanning() {
       .filter((c) => c.jour === jour)
       .sort((a, b) => a.debut.localeCompare(b.debut) || a.fin.localeCompare(b.fin));
 
+    // Total planifié du jour (les échéances, sans heure, ne comptent pas)
+    const minutesDuJourPlanifiees = creneauxDuJour.reduce((total, c) => total + dureeCreneau(c), 0);
+    minutesSemaine += minutesDuJourPlanifiees;
+    if (minutesDuJourPlanifiees > 0) {
+      const total = document.createElement("p");
+      total.className = "jour-total";
+      total.textContent = formaterDureeTravail(minutesDuJourPlanifiees) + " prévues"; // compteur.js
+      titreJour.after(total); // juste sous le nom du jour
+    }
+
     if (creneauxDuJour.length === 0 && echeances.length === 0) {
       const vide = document.createElement("p");
       vide.className = "jour-vide discret";
@@ -351,6 +368,10 @@ function afficherPlanning() {
     blocJour.append(entete, horaire);
     conteneurSemaine.append(blocJour);
   }
+
+  totalSemaine.textContent = minutesSemaine > 0
+    ? "Total planifié : " + formaterDureeTravail(minutesSemaine) // compteur.js
+    : "Rien de planifié cette semaine";
 
   // Ex. : "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) …" (des nombres seulement), lu par style.css
   conteneurSemaine.style.setProperty(
@@ -409,7 +430,13 @@ function elementCreneau(creneau, heureDebutGrille, voie) {
   ligne.style.setProperty("--couleur-bord", couleur.bord);
 
   // Texte complet au survol (utile pour un créneau court dont le texte est coupé)
-  ligne.title = creneau.debut + "–" + creneau.fin + " · " + matiere + " · " + titre;
+  ligne.title = creneau.debut + "–" + creneau.fin + " · " + matiere + " · " + titre + " (cliquer pour modifier)";
+
+  // Tout le créneau est un bouton : un clic (ou Entrée au clavier) ouvre sa modification
+  const bouton = document.createElement("button");
+  bouton.type = "button";
+  bouton.className = "creneau-bouton";
+  bouton.addEventListener("click", () => commencerModificationCreneau(creneau.id));
 
   // Les heures en deux morceaux ("14:30" et "–15:30") : dans un créneau étroit,
   // la fin passe à la ligne au lieu d'être coupée
@@ -429,11 +456,12 @@ function elementCreneau(creneau, heureDebutGrille, voie) {
   // (le " · " après les heures est ajouté par style.css, selon la disposition)
   texte.textContent = matiere + " · " + titre;
 
-  ligne.append(heures);
+  bouton.append(heures);
   if (tache && tache.examen === true) {
-    ligne.append(badgeExamen());
+    bouton.append(badgeExamen());
   }
-  ligne.append(texte);
+  bouton.append(texte);
+  ligne.append(bouton);
   return ligne;
 }
 
@@ -463,16 +491,34 @@ document.getElementById("bouton-cette-semaine").addEventListener("click", () => 
 });
 
 // ===== Formulaire : ouvrir, fermer, choisir une tâche =====
+// Comme pour les tâches, le formulaire a deux modes : "ajout" (idCreneauEnEdition = null)
+// et "modification" (idCreneauEnEdition = numéro du créneau modifié).
+
+let idCreneauEnEdition = null;
+
+const boutonValiderCreneau = document.getElementById("bouton-ajouter-creneau");
+const boutonSupprimerCreneau = document.getElementById("bouton-supprimer-creneau");
+const boutonFermerCreneau = document.getElementById("bouton-fermer-creneau");
 
 function ouvrirFormulaireCreneau() {
   formCreneau.hidden = false;
   boutonOuvrirCreneau.hidden = true;
 }
 
+// Boutons et textes du mode "ajout"
+function passerEnModeAjout() {
+  idCreneauEnEdition = null;
+  boutonValiderCreneau.textContent = "Ajouter le créneau";
+  boutonFermerCreneau.textContent = "Fermer";
+  boutonSupprimerCreneau.hidden = true;
+}
+
+// Vide le formulaire, revient au mode "ajout" et le replie
 function fermerFormulaireCreneau() {
   formCreneau.reset();
   appliquerTacheChoisie(); // champs titre et matière de nouveau modifiables
   afficherMessageCreneau("");
+  passerEnModeAjout();
   champCreneauJour.value = jourParDefaut();
   formCreneau.hidden = true;
   boutonOuvrirCreneau.hidden = false;
@@ -482,7 +528,7 @@ boutonOuvrirCreneau.addEventListener("click", () => {
   ouvrirFormulaireCreneau();
   champCreneauTache.focus();
 });
-document.getElementById("bouton-fermer-creneau").addEventListener("click", fermerFormulaireCreneau);
+boutonFermerCreneau.addEventListener("click", fermerFormulaireCreneau); // "Fermer" ou "Annuler"
 
 // Remplit la liste "Tâche existante" (tâches à faire d'abord)
 function remplirListeTaches() {
@@ -533,10 +579,10 @@ champCreneauTache.addEventListener("change", appliquerTacheChoisie);
 
 // Appelée par le bouton "Planifier" d'une tâche (taches.js)
 function planifierTache(id) {
+  fermerFormulaireCreneau(); // repart d'un formulaire vide, en mode "ajout"
   ouvrirFormulaireCreneau();
   champCreneauTache.value = String(id);
   appliquerTacheChoisie();
-  champCreneauJour.value = jourParDefaut();
   // Sur téléphone, le planning est plus haut que la liste des tâches : on y remonte
   formCreneau.scrollIntoView({ behavior: "smooth", block: "center" });
   champCreneauDebut.focus();
@@ -548,7 +594,48 @@ function rafraichirPlanning() {
   afficherPlanning();
 }
 
-// ===== Ajout d'un créneau =====
+// ===== Modifier un créneau (clic sur le créneau) =====
+
+function commencerModificationCreneau(id) {
+  const creneau = planning.find((c) => c.id === id);
+  if (creneau === undefined) {
+    return;
+  }
+  fermerFormulaireCreneau(); // repart d'un formulaire propre
+  ouvrirFormulaireCreneau();
+  idCreneauEnEdition = id;
+
+  // Relié à une tâche qui existe encore : on la choisit dans la liste
+  const tache = tacheDuCreneau(creneau);
+  champCreneauTache.value = tache ? String(tache.id) : "";
+  appliquerTacheChoisie();
+  if (!tache) {
+    champCreneauTitre.value = creneau.titre;     // créneau libre (ou tâche supprimée) :
+    champCreneauMatiere.value = creneau.matiere; // ses propres titre et matière
+  }
+  champCreneauJour.value = creneau.jour;
+  champCreneauDebut.value = creneau.debut;
+  champCreneauFin.value = creneau.fin;
+
+  boutonValiderCreneau.textContent = "Enregistrer les modifications";
+  boutonFermerCreneau.textContent = "Annuler";
+  boutonSupprimerCreneau.hidden = false;
+  formCreneau.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ===== Supprimer un créneau =====
+
+boutonSupprimerCreneau.addEventListener("click", () => {
+  if (idCreneauEnEdition === null || !confirm("Supprimer ce créneau ?")) {
+    return;
+  }
+  planning = planning.filter((c) => c.id !== idCreneauEnEdition);
+  enregistrerPlanning();
+  fermerFormulaireCreneau();
+  afficherPlanning();
+});
+
+// ===== Ajouter ou enregistrer un créneau =====
 
 function afficherMessageCreneau(texte) {
   messageCreneau.textContent = texte;
@@ -560,7 +647,8 @@ formCreneau.addEventListener("submit", (evenement) => {
 
   const tache = taches.find((t) => String(t.id) === champCreneauTache.value);
   const creneau = {
-    id: nouvelIdCreneau(),
+    // En modification, le créneau garde son numéro
+    id: idCreneauEnEdition !== null ? idCreneauEnEdition : nouvelIdCreneau(),
     jour: champCreneauJour.value,
     debut: champCreneauDebut.value,
     fin: champCreneauFin.value,
@@ -584,10 +672,20 @@ formCreneau.addEventListener("submit", (evenement) => {
     return;
   }
 
-  planning.push(creneau);
+  if (idCreneauEnEdition !== null) {
+    // Modification : on remplace l'ancien créneau par le nouveau, à la même place
+    const position = planning.findIndex((c) => c.id === idCreneauEnEdition);
+    if (position === -1) {
+      afficherMessageCreneau("Ce créneau n'existe plus.");
+      return;
+    }
+    planning[position] = creneau;
+  } else {
+    planning.push(creneau);
+  }
   enregistrerPlanning();
 
-  // On affiche la semaine du créneau ajouté (même si c'est une autre semaine),
+  // On affiche la semaine du créneau (même si c'est une autre semaine),
   // puis on replie le formulaire pour laisser la place à la semaine
   lundiAffiche = lundiDe(dateDepuisTexte(creneau.jour));
   fermerFormulaireCreneau();
