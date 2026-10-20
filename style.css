@@ -610,6 +610,11 @@ input[type="time"] {
   gap: 8px;
 }
 
+/* L'échelle des heures ne sert qu'en grille (grand écran) */
+.axe-heures {
+  display: none;
+}
+
 .jour {
   border: 1px solid var(--bordure);
   border-radius: 8px;
@@ -619,7 +624,8 @@ input[type="time"] {
 
 /* Le jour d'aujourd'hui : bordure et fond bleus */
 .jour.aujourdhui {
-  border: 2px solid var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent); /* bordure plus épaisse sans décaler la grille */
   background: var(--accent-fond);
 }
 
@@ -637,21 +643,29 @@ input[type="time"] {
   font-size: 0.875rem;
 }
 
-.liste-creneaux {
+/* Les créneaux : une zone de la couleur de leur matière
+   (--couleur-fond et --couleur-bord sont choisies par planning.js) */
+.jour-horaire {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .creneau {
-  padding: 4px 0;
+  padding: 4px 8px;
+  border-left: 4px solid var(--couleur-bord, var(--accent));
+  border-radius: 6px;
+  background: var(--couleur-fond, var(--accent-fond));
   font-size: 0.9rem;
   overflow-wrap: break-word; /* un mot trop long passe à la ligne… */
   hyphens: auto;             /* …avec un trait d'union, coupé en français (lang="fr") */
 }
 
-.creneau + .creneau {
-  border-top: 1px solid var(--bordure);
+.creneau .badge-examen {
+  margin: 0 4px;
 }
 
 .creneau-heures {
@@ -665,23 +679,82 @@ input[type="time"] {
   font-weight: normal;
 }
 
-/* Planning assez large (environ 760 px de contenu) : les 7 jours en colonnes */
+/* Planning assez large (environ 760 px de contenu) : une grille horaire.
+   Colonne 1 : l'échelle des heures ; colonnes 2 à 8 : les 7 jours.
+   Ligne 1 : le nom du jour et les échéances ; ligne 2 : les heures de la journée. */
 @container (min-width: 760px) {
   .semaine {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 6px;
-    flex: 1 0 auto;  /* toute la hauteur restante du bloc : colonnes hautes, comme un agenda */
-    min-height: 360px;
+    grid-template-columns: 2.6rem repeat(7, minmax(0, 1fr));
+    /* La ligne des heures prend toute la hauteur restante, et au moins 40 px par heure */
+    grid-template-rows: auto minmax(calc(var(--heures) * 40px), 1fr);
+    column-gap: 4px;
+    flex: 1 0 auto; /* toute la hauteur restante du bloc : colonnes hautes, comme un agenda */
   }
 
+  /* Échelle des heures : un repère par heure, à sa hauteur */
+  .axe-heures {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+  }
+
+  .repere-heure {
+    position: absolute;
+    right: 4px;
+    top: calc(var(--position) / var(--heures) * 100%);
+    transform: translateY(-50%); /* le texte centré sur la ligne de l'heure */
+    font-size: 0.7rem;
+    color: var(--discret);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .repere-heure:first-child {
+    transform: none; /* le premier repère ne dépasse pas en haut */
+  }
+
+  /* Chaque jour occupe les deux lignes et reprend celles de la grille (subgrid) :
+     les heures de tous les jours sont alignées, quelle que soit la place des échéances */
   .jour {
-    padding: 6px;    /* les 7 colonnes s'étirent à la même hauteur */
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-template-rows: subgrid;
+    padding: 0;
+    overflow: hidden;
   }
 
-  .jour-titre,
-  .creneau {
+  .jour-entete {
+    padding: 6px;
+    border-bottom: 1px solid var(--bordure);
+  }
+
+  .jour-titre {
     font-size: 0.85rem;
+  }
+
+  /* Zone horaire : une ligne fine à chaque heure, les créneaux placés dessus */
+  .jour-horaire {
+    display: block;
+    position: relative;
+    background-image: linear-gradient(to bottom, var(--bordure) 1px, transparent 1px);
+    background-size: 100% calc(100% / var(--heures)); /* une ligne par heure */
+  }
+
+  /* Un créneau : en haut à son heure de début, haut comme sa durée,
+     et partagé en largeur avec ceux qui le chevauchent */
+  .creneau {
+    position: absolute;
+    top: calc(var(--debut) / var(--total) * 100%);
+    height: calc(var(--duree) / var(--total) * 100%);
+    left: calc(var(--voie) / var(--voies) * 100% + 2px);
+    width: calc(100% / var(--voies) - 4px);
+    padding: 2px 4px;
+    border-left-width: 3px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    overflow: hidden; /* un créneau court montre le début du texte (le reste au survol) */
   }
 
   /* En colonne étroite, l'heure sur sa propre ligne (jamais coupée), puis matière et titre */
@@ -692,6 +765,11 @@ input[type="time"] {
 
   .creneau-heures::after {
     content: none;
+  }
+
+  /* "Rien de prévu" est inutile : la colonne vide se voit dans la grille */
+  .jour-vide {
+    display: none;
   }
 }
 
@@ -733,6 +811,10 @@ input[type="time"] {
 .creneau.fait {
   color: var(--discret);
   text-decoration: line-through;
+}
+
+.creneau.fait {
+  opacity: 0.6; /* la zone de couleur reste, mais atténuée */
 }
 
 .echeance.fait {

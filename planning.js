@@ -142,6 +142,118 @@ function badgeExamen() {
   return badge;
 }
 
+// ===== Grille horaire =====
+// Sur grand écran, chaque jour est une colonne avec une échelle d'heures : un créneau
+// y est placé selon son heure de début et sa hauteur dépend de sa durée.
+// planning.js calcule seulement des nombres (minutes depuis le haut de la grille,
+// durée, "voie" en cas de chevauchement) ; style.css s'occupe de la disposition.
+// Sur téléphone (jours empilés), les mêmes créneaux s'affichent en liste.
+
+const HEURE_DEBUT_GRILLE = 8;  // la grille montre au moins de 8 h…
+const HEURE_FIN_GRILLE = 20;   // …à 20 h, et s'élargit si un créneau en sort
+
+// "14:30" → 870 (minutes depuis minuit)
+function minutesDepuisMinuit(heure) {
+  const [h, m] = heure.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// Heures de début et de fin de la grille pour les créneaux de la semaine affichée
+function bornesGrille(creneauxSemaine) {
+  let debut = HEURE_DEBUT_GRILLE;
+  let fin = HEURE_FIN_GRILLE;
+  for (const c of creneauxSemaine) {
+    debut = Math.min(debut, Math.floor(minutesDepuisMinuit(c.debut) / 60));
+    fin = Math.max(fin, Math.ceil(minutesDepuisMinuit(c.fin) / 60));
+  }
+  return { debut: debut, fin: fin };
+}
+
+// Créneaux qui se chevauchent : on les met côte à côte, chacun dans sa "voie".
+// Renvoie, pour chaque créneau, { voie: sa position, voies: le nombre de voies du groupe }.
+function calculerVoies(creneauxDuJour) {
+  const resultat = new Map();
+  let groupe = [];      // créneaux qui se chevauchent (directement ou en chaîne)
+  let finGroupe = "";
+
+  function fermerGroupe() {
+    const finsDesVoies = []; // heure de fin du dernier créneau de chaque voie
+    for (const c of groupe) {
+      let voie = finsDesVoies.findIndex((finVoie) => finVoie <= c.debut);
+      if (voie === -1) {
+        voie = finsDesVoies.length; // aucune voie libre : on en ouvre une nouvelle
+      }
+      finsDesVoies[voie] = c.fin;
+      resultat.set(c.id, { voie: voie });
+    }
+    for (const c of groupe) {
+      resultat.get(c.id).voies = finsDesVoies.length;
+    }
+  }
+
+  // Les créneaux arrivent triés par heure de début
+  for (const c of creneauxDuJour) {
+    if (groupe.length > 0 && c.debut >= finGroupe) {
+      fermerGroupe(); // ce créneau commence après la fin de tout le groupe
+      groupe = [];
+      finGroupe = "";
+    }
+    groupe.push(c);
+    if (c.fin > finGroupe) {
+      finGroupe = c.fin;
+    }
+  }
+  if (groupe.length > 0) {
+    fermerGroupe();
+  }
+  return resultat;
+}
+
+// Une couleur par matière. Chaque nouvelle matière reçoit la couleur suivante, dans
+// l'ordre où elle apparaît pour la première fois dans le planning (ordre de création
+// des créneaux) : les 10 premières matières ont toutes une couleur différente, et une
+// matière garde sa couleur quand on en ajoute d'autres.
+const COULEURS_MATIERES = [
+  { fond: "#dbeafe", bord: "#2563eb" }, // bleu
+  { fond: "#dcfce7", bord: "#16a34a" }, // vert
+  { fond: "#fef3c7", bord: "#d97706" }, // ambre
+  { fond: "#fce7f3", bord: "#db2777" }, // rose
+  { fond: "#ede9fe", bord: "#7c3aed" }, // violet
+  { fond: "#cffafe", bord: "#0891b2" }, // cyan
+  { fond: "#ffedd5", bord: "#ea580c" }, // orange
+  { fond: "#e0e7ff", bord: "#4f46e5" }, // indigo
+  { fond: "#ecfccb", bord: "#65a30d" }, // citron vert
+  { fond: "#fee2e2", bord: "#dc2626" }, // rouge
+];
+
+let numerosMatieres = new Map(); // "audit" → 0, "fiscalité" → 1…
+
+// "Audit" et " audit " sont la même matière
+function cleMatiere(matiere) {
+  return matiere.trim().toLowerCase();
+}
+
+// Recalcule l'ordre des matières à partir des créneaux (du plus ancien au plus récent)
+function numeroterMatieres() {
+  numerosMatieres = new Map();
+  const parAnciennete = [...planning].sort((a, b) => a.id - b.id);
+  for (const creneau of parAnciennete) {
+    const tache = tacheDuCreneau(creneau);
+    const cle = cleMatiere(tache ? tache.matiere : creneau.matiere);
+    if (!numerosMatieres.has(cle)) {
+      numerosMatieres.set(cle, numerosMatieres.size);
+    }
+  }
+}
+
+function couleurMatiere(matiere) {
+  const cle = cleMatiere(matiere);
+  if (!numerosMatieres.has(cle)) {
+    numerosMatieres.set(cle, numerosMatieres.size); // matière pas encore vue
+  }
+  return COULEURS_MATIERES[numerosMatieres.get(cle) % COULEURS_MATIERES.length];
+}
+
 // ===== Affichage de la semaine =====
 
 function afficherPlanning() {
@@ -150,10 +262,35 @@ function afficherPlanning() {
 
   conteneurSemaine.innerHTML = ""; // on vide avant de reconstruire (aucun texte saisi ici)
   const aujourdhui = dateDuJour(); // taches.js
+  numeroterMatieres(); // couleurs des matières
+
+  // Bornes de la grille horaire pour toute la semaine (les 7 colonnes sont alignées)
+  const joursSemaine = [];
+  for (let i = 0; i < 7; i++) {
+    joursSemaine.push(texteDepuisDate(ajouterJours(lundiAffiche, i)));
+  }
+  const bornes = bornesGrille(planning.filter((c) => joursSemaine.includes(c.jour)));
+  const minutesGrille = (bornes.fin - bornes.debut) * 60;
+  // Des nombres seulement (pas de texte saisi) : utilisés par style.css pour placer les créneaux
+  conteneurSemaine.style.setProperty("--heures", bornes.fin - bornes.debut);
+  conteneurSemaine.style.setProperty("--total", minutesGrille);
+
+  // L'échelle des heures (à gauche des colonnes, sur grand écran seulement)
+  const axe = document.createElement("div");
+  axe.className = "axe-heures";
+  axe.setAttribute("aria-hidden", "true"); // décoratif : les heures sont écrites dans chaque créneau
+  for (let h = bornes.debut; h <= bornes.fin; h++) {
+    const repere = document.createElement("span");
+    repere.className = "repere-heure";
+    repere.style.setProperty("--position", h - bornes.debut);
+    repere.textContent = String(h).padStart(2, "0") + " h";
+    axe.append(repere);
+  }
+  conteneurSemaine.append(axe);
 
   for (let i = 0; i < 7; i++) {
     const date = ajouterJours(lundiAffiche, i);
-    const jour = texteDepuisDate(date);
+    const jour = joursSemaine[i];
 
     const blocJour = document.createElement("div");
     blocJour.className = "jour";
@@ -161,12 +298,16 @@ function afficherPlanning() {
       blocJour.classList.add("aujourdhui"); // mis en évidence
     }
 
+    // En-tête du jour : son nom, puis les échéances de tâches (sans heure)
+    const entete = document.createElement("div");
+    entete.className = "jour-entete";
+
     const titreJour = document.createElement("h3");
     titreJour.className = "jour-titre";
     titreJour.textContent = NOMS_JOURS[i] + " " + jourMois(date);
-    blocJour.append(titreJour);
+    entete.append(titreJour);
 
-    // 1. Les tâches dont l'échéance tombe ce jour-là (à faire d'abord, puis faites)
+    // Les tâches dont l'échéance tombe ce jour-là (à faire d'abord, puis faites)
     const echeances = taches
       .filter((t) => t.echeance === jour)
       .sort((a, b) => Number(a.faite) - Number(b.faite));
@@ -176,28 +317,30 @@ function afficherPlanning() {
       for (const tache of echeances) {
         listeEcheances.append(elementEcheance(tache));
       }
-      blocJour.append(listeEcheances);
+      entete.append(listeEcheances);
     }
 
-    // 2. Les créneaux de ce jour, triés par heure de début
+    // Les créneaux de ce jour, triés par heure de début (puis de fin)
     const creneauxDuJour = planning
       .filter((c) => c.jour === jour)
-      .sort((a, b) => a.debut.localeCompare(b.debut));
+      .sort((a, b) => a.debut.localeCompare(b.debut) || a.fin.localeCompare(b.fin));
 
-    if (creneauxDuJour.length > 0) {
-      const liste = document.createElement("ul");
-      liste.className = "liste-creneaux";
-      for (const creneau of creneauxDuJour) {
-        liste.append(elementCreneau(creneau));
-      }
-      blocJour.append(liste);
-    } else if (echeances.length === 0) {
+    if (creneauxDuJour.length === 0 && echeances.length === 0) {
       const vide = document.createElement("p");
       vide.className = "jour-vide discret";
       vide.textContent = "Rien de prévu";
-      blocJour.append(vide);
+      entete.append(vide);
     }
 
+    // La zone horaire du jour (une liste : sur téléphone, les créneaux s'y suivent)
+    const horaire = document.createElement("ul");
+    horaire.className = "jour-horaire";
+    const voies = calculerVoies(creneauxDuJour);
+    for (const creneau of creneauxDuJour) {
+      horaire.append(elementCreneau(creneau, bornes.debut, voies.get(creneau.id)));
+    }
+
+    blocJour.append(entete, horaire);
     conteneurSemaine.append(blocJour);
   }
 }
@@ -224,8 +367,9 @@ function elementEcheance(tache) {
   return ligne;
 }
 
-// Un créneau affiché : "14:00–15:30 · Audit · Relire le cours"
-function elementCreneau(creneau) {
+// Un créneau : une zone de couleur (celle de sa matière), placée selon ses horaires.
+// heureDebutGrille : l'heure en haut de la grille ; voie : sa place s'il en chevauche d'autres.
+function elementCreneau(creneau, heureDebutGrille, voie) {
   const ligne = document.createElement("li");
   ligne.className = "creneau";
 
@@ -236,6 +380,22 @@ function elementCreneau(creneau) {
   if (tache && tache.faite) {
     ligne.classList.add("fait"); // la tâche est faite : créneau barré
   }
+
+  // Position et taille dans la grille (des nombres, lus par style.css)
+  const debut = minutesDepuisMinuit(creneau.debut);
+  const fin = minutesDepuisMinuit(creneau.fin);
+  ligne.style.setProperty("--debut", debut - heureDebutGrille * 60);
+  ligne.style.setProperty("--duree", fin - debut);
+  ligne.style.setProperty("--voie", voie.voie);
+  ligne.style.setProperty("--voies", voie.voies);
+
+  // Couleur de la matière
+  const couleur = couleurMatiere(matiere);
+  ligne.style.setProperty("--couleur-fond", couleur.fond);
+  ligne.style.setProperty("--couleur-bord", couleur.bord);
+
+  // Texte complet au survol (utile pour un créneau court dont le texte est coupé)
+  ligne.title = creneau.debut + "–" + creneau.fin + " · " + matiere + " · " + titre;
 
   const heures = document.createElement("span");
   heures.className = "creneau-heures";
