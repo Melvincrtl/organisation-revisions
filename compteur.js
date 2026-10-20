@@ -45,12 +45,24 @@ function ajouterSessionPomodoro() {
   pomodorosParJour[aujourdhui] = (pomodorosParJour[aujourdhui] || 0) + 1;
   ecrireDonnees(CLE_POMODOROS, pomodorosParJour);
   afficherCompteur();
+  signalerModificationLocale(); // à envoyer aux autres appareils (synchro.js)
 }
 
 // Appelée par minuteur.js à la fin de chaque période de travail, avec sa durée
 function ajouterMinutesTravail(minutes) {
   const aujourdhui = dateDuJour();
   minutesParJour[aujourdhui] = minutesDuJour(aujourdhui) + minutes;
+  ecrireDonnees(CLE_MINUTES, minutesParJour);
+  afficherCompteur();
+  signalerModificationLocale(); // à envoyer aux autres appareils (synchro.js)
+}
+
+// Remplace les historiques par ceux reçus d'un autre appareil (appelée par synchro.js).
+// Pas de signalerModificationLocale() : ce n'est pas une modification à renvoyer.
+function remplacerHistorique(nouveauxPomodoros, nouvellesMinutes) {
+  pomodorosParJour = nouveauxPomodoros;
+  minutesParJour = nouvellesMinutes;
+  ecrireDonnees(CLE_POMODOROS, pomodorosParJour);
   ecrireDonnees(CLE_MINUTES, minutesParJour);
   afficherCompteur();
 }

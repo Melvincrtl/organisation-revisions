@@ -343,3 +343,56 @@ button {
 .tache.examen.faite .badge-examen {
   background: var(--discret);
 }
+
+/* ===== Synchronisation ===== */
+/* "display: flex" des formulaires l'emporte sur l'attribut hidden : on le précise */
+#bloc-synchro [hidden] {
+  display: none;
+}
+
+input[type="email"] {
+  font: inherit;
+  font-weight: normal;
+  padding: 10px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.synchro-adresse {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere; /* une longue adresse passe à la ligne au lieu de déborder */
+}
+
+.synchro-boutons {
+  display: flex;
+  flex-wrap: wrap; /* sur un écran étroit, les boutons passent l'un sous l'autre */
+  gap: 8px;
+}
+
+.synchro-boutons button {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Choix entre deux versions : encadré bien visible */
+.synchro-conflit {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--alerte-fond);
+}
+
+.synchro-conflit p {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.synchro-statut {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+}
+
+.synchro-statut.erreur {
+  color: var(--retard);
+}

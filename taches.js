@@ -77,6 +77,19 @@ function texteJoursRestants(jours) {
 function enregistrerTaches() {
   ecrireDonnees(CLE_TACHES, taches);
   afficherCompteur(); // les tâches ont changé : le compteur du jour aussi (compteur.js)
+  signalerModificationLocale(); // à envoyer aux autres appareils (synchro.js)
+}
+
+// Remplace toute la liste par celle reçue d'un autre appareil (appelée par synchro.js).
+// On n'appelle pas enregistrerTaches() : ce n'est pas une modification à renvoyer.
+function remplacerTaches(nouvellesTaches) {
+  taches = nouvellesTaches;
+  ecrireDonnees(CLE_TACHES, taches);
+  // La tâche qu'on était en train de modifier n'existe plus : on revient au mode ajout
+  if (idEnEdition !== null && !taches.some((t) => t.id === idEnEdition)) {
+    quitterModification();
+  }
+  afficherTaches();
 }
 
 // Redessine toute la liste à partir du tableau "taches"

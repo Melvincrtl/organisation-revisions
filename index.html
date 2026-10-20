@@ -81,10 +81,53 @@
       <ul id="liste-taches"></ul>
       <p id="message-vide" class="discret">Aucune tâche pour l'instant.</p>
     </section>
+
+    <!-- ===== Bloc : synchronisation entre appareils (géré par synchro.js) ===== -->
+    <section class="bloc" id="bloc-synchro">
+      <h2>Synchronisation</h2>
+
+      <!-- Non connecté : on reçoit un lien de connexion par mail -->
+      <form id="form-connexion">
+        <label>
+          Adresse e-mail
+          <input type="email" id="champ-email" required autocomplete="email" placeholder="prenom.nom@exemple.fr">
+        </label>
+        <button type="submit" id="bouton-lien">Recevoir le lien</button>
+      </form>
+
+      <!-- Connecté -->
+      <div id="zone-connecte" hidden>
+        <p class="synchro-adresse">Connecté : <strong id="adresse-connectee"></strong></p>
+        <div class="synchro-boutons">
+          <button type="button" id="bouton-synchroniser">Synchroniser maintenant</button>
+          <button type="button" id="bouton-deconnexion" class="bouton-secondaire">Se déconnecter</button>
+        </div>
+      </div>
+
+      <!-- Deux versions différentes : on te demande laquelle garder -->
+      <div id="zone-conflit" class="synchro-conflit" hidden>
+        <p id="texte-conflit"></p>
+        <div class="synchro-boutons">
+          <button type="button" id="bouton-garder-appareil">Garder celle de cet appareil</button>
+          <button type="button" id="bouton-garder-en-ligne" class="bouton-secondaire">Garder celle en ligne</button>
+        </div>
+      </div>
+
+      <p id="statut-synchro" class="synchro-statut discret">Non connecté</p>
+    </section>
   </main>
 
-  <!-- L'ordre compte : stockage.js d'abord, car taches.js l'utilise -->
+  <!-- L'ordre compte :
+       1. stockage.js d'abord : tous les autres fichiers l'utilisent.
+       2. La bibliothèque Supabase (version exacte), puis synchro-config.js et synchro.js,
+          AVANT taches.js, compteur.js et minuteur.js : ceux-ci appellent
+          signalerModificationLocale() (synchro.js) dès qu'ils écrivent des données,
+          parfois dès le chargement (le minuteur peut compter une période terminée).
+          Si la bibliothèque ne se charge pas (hors connexion), le reste fonctionne. -->
   <script src="stockage.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="synchro-config.js"></script>
+  <script src="synchro.js"></script>
   <script src="taches.js"></script>
   <!-- compteur.js avant minuteur.js : au chargement, le minuteur peut
        avoir besoin de compter une session terminée pendant l'absence -->
