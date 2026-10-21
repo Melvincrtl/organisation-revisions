@@ -183,11 +183,15 @@ button {
   margin: 16px 0 0;
 }
 
+/* Une tâche : la case à cocher à gauche, le texte à droite,
+   et les boutons côte à côte sous le texte */
 .tache {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 10px 0;
   border-top: 1px solid var(--bordure);
 }
 
@@ -225,10 +229,17 @@ button {
 }
 
 /* Les boutons Modifier et Supprimer, empilés pour tenir sur un téléphone */
+/* Les boutons Modifier / Planifier / Supprimer, sous le texte de la tâche */
 .tache-actions {
+  grid-column: 2;      /* alignés avec le texte, pas sous la case à cocher */
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;     /* s'il n'y a pas la place, ils passent à la ligne */
   gap: 6px;
+}
+
+.tache-actions button {
+  padding: 3px 10px;
+  font-size: 0.85rem;
 }
 
 .bouton-modifier,
