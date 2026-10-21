@@ -456,7 +456,8 @@ input[type="email"] {
 }
 
 /* Titre "Planning" et bouton "+ Ajouter un créneau" sur une ligne */
-.planning-titre {
+.planning-titre,
+.taches-titre {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -464,12 +465,20 @@ input[type="email"] {
   margin-bottom: 12px;
 }
 
-.planning-titre h2 {
+.planning-titre h2,
+.taches-titre h2 {
   margin: 0;
 }
 
-.planning-titre button {
+.planning-titre button,
+.taches-titre button {
   padding: 6px 12px;
+}
+
+/* Formulaire des tâches replié : "display: flex" des formulaires l'emporte
+   sur l'attribut hidden, on le précise */
+#form-tache[hidden] {
+  display: none;
 }
 
 /* Formulaire compact : petits libellés, champs serrés.

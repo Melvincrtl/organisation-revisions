@@ -27,6 +27,7 @@ const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
 const boutonAjouter = document.getElementById("bouton-ajouter");
 const boutonAnnuler = document.getElementById("bouton-annuler");
+const boutonOuvrirTache = document.getElementById("bouton-ouvrir-tache");
 
 // Numéro de la tâche en cours de modification (null = on ajoute une nouvelle tâche)
 let idEnEdition = null;
@@ -242,11 +243,24 @@ function supprimerTache(id) {
   afficherTaches();
 }
 
+// ===== Formulaire replié derrière le bouton "+ Ajouter une tâche" =====
+
+function ouvrirFormulaireTache() {
+  formulaire.hidden = false;
+  boutonOuvrirTache.hidden = true;
+}
+
+boutonOuvrirTache.addEventListener("click", () => {
+  ouvrirFormulaireTache();
+  champTitre.focus();
+});
+
 // ===== Modification d'une tâche =====
 
 // Remplit le formulaire avec la tâche choisie et passe en mode "modification"
 function commencerModification(id) {
   const tache = taches.find((t) => t.id === id);
+  ouvrirFormulaireTache(); // le formulaire est replié par défaut
   idEnEdition = id;
   champTitre.value = tache.titre;
   champMatiere.value = tache.matiere;
@@ -260,7 +274,7 @@ function commencerModification(id) {
   }
   afficherChampEcheance();
   boutonAjouter.textContent = "Enregistrer les modifications";
-  boutonAnnuler.hidden = false;
+  boutonAnnuler.textContent = "Annuler";
   // Sur téléphone, le formulaire peut être plus haut : on remonte jusqu'à lui
   formulaire.scrollIntoView({ behavior: "smooth" });
   champTitre.focus();
@@ -280,17 +294,20 @@ function modifierTache(id, titre, matiere, echeance, examen) {
   afficherTaches();
 }
 
-// Revient au formulaire d'ajout normal
+// Revient au formulaire d'ajout normal et le replie
+// (après un ajout, un enregistrement, "Fermer" ou "Annuler")
 function quitterModification() {
   idEnEdition = null;
   formulaire.reset(); // recoche "Ajouter une échéance" et décoche "C'est un examen"
   champEcheance.value = dateDuJour(); // reset() a vidé la date : on remet aujourd'hui
   afficherChampEcheance();
   boutonAjouter.textContent = "Ajouter la tâche";
-  boutonAnnuler.hidden = true;
+  boutonAnnuler.textContent = "Fermer";
+  formulaire.hidden = true;
+  boutonOuvrirTache.hidden = false;
 }
 
-boutonAnnuler.addEventListener("click", quitterModification);
+boutonAnnuler.addEventListener("click", quitterModification); // "Fermer" ou "Annuler"
 
 // ===== Échéance facultative =====
 
@@ -323,8 +340,8 @@ formulaire.addEventListener("submit", (evenement) => {
   } else {
     modifierTache(idEnEdition, titre, matiere, lireEcheance(), caseExamen.checked);
   }
-  quitterModification(); // vide le formulaire et remet le mode ajout
-  champTitre.focus();
+  quitterModification(); // vide le formulaire, remet le mode ajout et le replie
+  boutonOuvrirTache.focus(); // au clavier, on peut enchaîner une nouvelle tâche
 });
 
 // Un clic n'importe où sur le champ de date ouvre le calendrier

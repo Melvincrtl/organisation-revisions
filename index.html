@@ -107,9 +107,14 @@
 
     <!-- ===== Bloc : liste de tâches ===== -->
     <section class="bloc" id="bloc-taches">
-      <h2>Tâches</h2>
+      <!-- Titre et bouton qui ouvre le formulaire (replié par défaut, pour laisser
+           la place à la liste des tâches) -->
+      <div class="taches-titre">
+        <h2>Tâches</h2>
+        <button type="button" id="bouton-ouvrir-tache">+ Ajouter une tâche</button>
+      </div>
 
-      <form id="form-tache">
+      <form id="form-tache" hidden>
         <label>
           Titre
           <input type="text" id="champ-titre" required placeholder="Ex. : Refaire l'exercice 3 sur les amortissements">
@@ -133,8 +138,8 @@
           <input type="date" id="champ-echeance" required>
         </label>
         <button type="submit" id="bouton-ajouter">Ajouter la tâche</button>
-        <!-- Visible seulement pendant la modification d'une tâche -->
-        <button type="button" id="bouton-annuler" class="bouton-secondaire" hidden>Annuler</button>
+        <!-- "Fermer" en mode ajout, "Annuler" pendant la modification d'une tâche -->
+        <button type="button" id="bouton-annuler" class="bouton-secondaire">Fermer</button>
       </form>
 
       <!-- La liste est remplie par taches.js -->
