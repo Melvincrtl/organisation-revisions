@@ -30,6 +30,7 @@ entre mes appareils avec Supabase.
 | `taches.js`   | Liste de tâches (ajout, modification, fait / à faire, suppression), échéance facultative avec compte à rebours en jours, examens avec badge EXAM |
 | `minuteur.js` | Minuteur Pomodoro (travail de 20 min à 2 h, pause adaptée) avec alerte |
 | `compteur.js` | Bilan du jour : tâches faites (dont examens passés) et temps de travail (sessions enregistrées) |
+| `planning.js` | Planning de la semaine : grille horaire, créneaux colorés par matière, échéances des tâches, tâches planifiées, totaux |
 | `synchro-config.js` | Adresse du projet Supabase et clé publiable (jamais de clé secrète) |
 | `synchro.js`  | Synchronisation entre appareils avec Supabase (connexion par lien envoyé par mail) |
 | `supabase.sql` | Script qui recrée la table, la sécurité par ligne, les règles et les droits dans Supabase |
@@ -37,11 +38,17 @@ entre mes appareils avec Supabase.
 ## Synchronisation
 
 Facultative : sans connexion ni compte, tout reste dans le navigateur comme avant.
-Une fois connecté (bloc « Synchronisation » en bas de page), les tâches, les sessions
-et les minutes de travail sont partagées entre appareils. L'état du minuteur et la
+Une fois connecté (bloc « Synchronisation » en bas de page), les tâches, les sessions,
+les minutes de travail et le planning sont partagés entre appareils. L'état du minuteur et la
 durée de travail restent propres à chaque appareil. Si deux versions différentes
 existent, l'application demande laquelle garder (nombre de tâches, temps de travail
 du jour et date de modification de chaque côté).
+
+Format des données en ligne : `version: 2` depuis l'ajout du planning
+(`{ version, taches, pomodorosParJour, minutesParJour, planning }`). Les anciennes
+données en `version: 1` (sans planning) restent lisibles. Un appareil qui afficherait
+encore l'ancienne version du site refuse les données en version 2 (« données
+illisibles ») au lieu de les écraser : il suffit de recharger la page.
 
 ## Configurer Supabase
 
@@ -97,3 +104,6 @@ puis la désactiver de nouveau.
 - [x] Synchronisation Mac / téléphone avec Supabase (connexion par lien envoyé par mail)
 - [x] Message de conflit détaillé (tâches, temps de travail du jour, date de modification)
 - [x] Script `supabase.sql` et instructions pour recréer la configuration Supabase
+- [x] Planning hebdomadaire : grille horaire (Mac) ou liste (téléphone), une couleur par
+      matière, échéances des tâches, tâches planifiables, modification, suppression, totaux
+- [x] Planning synchronisé entre appareils (données en version 2)

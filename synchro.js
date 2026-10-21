@@ -1,13 +1,20 @@
 // synchro.js
-// Synchronise les tâches, les sessions et les minutes de travail entre appareils,
-// grâce à Supabase. Le localStorage reste la copie locale : l'application marche
+// Synchronise les tâches, les sessions, les minutes de travail et le planning entre
+// appareils, grâce à Supabase. Le localStorage reste la copie locale : l'application marche
 // toujours sans connexion et sans compte.
 //
-// Ce fichier est chargé AVANT taches.js, compteur.js et minuteur.js : ceux-ci appellent
+// Ce fichier est chargé AVANT taches.js, compteur.js, planning.js et minuteur.js : ceux-ci appellent
 // signalerModificationLocale() dès qu'ils écrivent des données (parfois dès le
 // chargement de la page). La synchronisation, elle, ne démarre qu'une fois la page
-// entièrement chargée (DOMContentLoaded), quand "taches", "pomodorosParJour" et
-// "minutesParJour" existent.
+// entièrement chargée (DOMContentLoaded), quand "taches", "pomodorosParJour",
+// "minutesParJour" et "planning" existent.
+//
+// Format des données en ligne :
+// - version 1 : { version: 1, taches, pomodorosParJour, minutesParJour } (avant le planning) ;
+// - version 2 : la même chose avec "planning" en plus.
+// On lit les deux (version 1 = planning vide), mais on écrit toujours la version 2.
+// Un appareil resté sur l'ancienne version du site ne connaît que la version 1 : il refuse
+// les données en version 2 (« illisibles ») au lieu de les écraser sans planning.
 //
 // Ne sont PAS synchronisés : l'état du minuteur et la durée de travail (propres à chaque appareil).
 
@@ -35,7 +42,7 @@ const boutonGarderAppareil = document.getElementById("bouton-garder-appareil");
 const boutonGarderEnLigne = document.getElementById("bouton-garder-en-ligne");
 const statutSynchro = document.getElementById("statut-synchro");
 
-// ===== Appelée par taches.js et compteur.js à chaque écriture de données =====
+// ===== Appelée par taches.js, compteur.js et planning.js à chaque écriture de données =====
 
 function signalerModificationLocale() {
   ecrireDonnees(CLE_SYNCHRO_MODIFIE, true);
@@ -52,17 +59,25 @@ function signalerModificationLocale() {
 // Les données synchronisées, dans un seul objet
 function donneesLocales() {
   return {
-    version: 1,
+    version: 2,
     taches: taches,
     pomodorosParJour: pomodorosParJour,
     minutesParJour: minutesParJour,
+    planning: planning, // planning.js
   };
 }
 
 function aDesDonneesLocales() {
   return taches.length > 0 ||
     Object.keys(pomodorosParJour).length > 0 ||
-    Object.keys(minutesParJour).length > 0;
+    Object.keys(minutesParJour).length > 0 ||
+    planning.length > 0;
+}
+
+// Le planning de données reçues : absent (version 1) = planning vide ;
+// les créneaux invalides sont ignorés (nettoyerPlanning, planning.js)
+function planningDe(donnees) {
+  return nettoyerPlanning(Array.isArray(donnees.planning) ? donnees.planning : []);
 }
 
 // mis_a_jour de la dernière version synchronisée (null = jamais synchronisé)
@@ -78,10 +93,14 @@ function estModifie() {
 // Vérifie que les données reçues ont la bonne forme avant de les utiliser
 function donneesValides(donnees) {
   const estObjet = (x) => typeof x === "object" && x !== null && !Array.isArray(x);
-  if (!estObjet(donnees) || donnees.version !== 1) {
+  if (!estObjet(donnees) || (donnees.version !== 1 && donnees.version !== 2)) {
     return false;
   }
   if (!Array.isArray(donnees.taches) || !estObjet(donnees.pomodorosParJour) || !estObjet(donnees.minutesParJour)) {
+    return false;
+  }
+  // Planning : absent (anciennes données) ou un tableau
+  if (donnees.planning !== undefined && !Array.isArray(donnees.planning)) {
     return false;
   }
   // Chaque tâche doit avoir ce dont afficherTaches() a besoin
@@ -111,8 +130,19 @@ function trierCles(valeur) {
   return valeur;
 }
 
+// Ce qui compte pour comparer deux versions : le contenu, pas le numéro de version,
+// et un planning absent vaut un planning vide (pas de faux conflit avec les anciennes données)
+function contenu(donnees) {
+  return {
+    taches: donnees.taches,
+    pomodorosParJour: donnees.pomodorosParJour,
+    minutesParJour: donnees.minutesParJour,
+    planning: planningDe(donnees),
+  };
+}
+
 function memesDonnees(a, b) {
-  return JSON.stringify(trierCles(a)) === JSON.stringify(trierCles(b));
+  return JSON.stringify(trierCles(contenu(a))) === JSON.stringify(trierCles(contenu(b)));
 }
 
 // Applique en local une version reçue : mémoire, localStorage, affichage
@@ -120,6 +150,7 @@ function appliquerVersionEnLigne(ligne) {
   clearTimeout(minuterieEnvoi); // un envoi programmé n'a plus lieu d'être
   remplacerTaches(ligne.donnees.taches);                                            // taches.js
   remplacerHistorique(ligne.donnees.pomodorosParJour, ligne.donnees.minutesParJour); // compteur.js
+  remplacerPlanning(planningDe(ligne.donnees));                                      // planning.js
   ecrireDonnees(CLE_SYNCHRO_VERSION, ligne.mis_a_jour);
   ecrireDonnees(CLE_SYNCHRO_MODIFIE, false);
   afficherSynchronise();
@@ -177,7 +208,10 @@ async function synchroniser() {
   }
 
   if (!donneesValides(ligne.donnees)) {
-    afficherStatut("Erreur : les données en ligne sont illisibles, rien n'a été modifié.", true);
+    const versionRecente = ligne.donnees && Number.isFinite(ligne.donnees.version) && ligne.donnees.version > 2;
+    afficherStatut(versionRecente
+      ? "Erreur : les données en ligne viennent d'une version plus récente de l'application. Recharge la page."
+      : "Erreur : les données en ligne sont illisibles, rien n'a été modifié.", true);
     return;
   }
 

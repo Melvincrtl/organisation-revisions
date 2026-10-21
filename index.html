@@ -180,7 +180,7 @@
   <!-- L'ordre compte :
        1. stockage.js d'abord : tous les autres fichiers l'utilisent.
        2. La bibliothèque Supabase (version exacte), puis synchro-config.js et synchro.js,
-          AVANT taches.js, compteur.js et minuteur.js : ceux-ci appellent
+          AVANT taches.js, compteur.js, planning.js et minuteur.js : ceux-ci appellent
           signalerModificationLocale() (synchro.js) dès qu'ils écrivent des données,
           parfois dès le chargement (le minuteur peut compter une période terminée).
           Si la bibliothèque ne se charge pas (hors connexion), le reste fonctionne. -->

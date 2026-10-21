@@ -99,6 +99,19 @@ let lundiAffiche = lundiDe(new Date()); // la semaine affichée
 
 function enregistrerPlanning() {
   ecrireDonnees(CLE_PLANNING, planning);
+  signalerModificationLocale(); // à envoyer aux autres appareils (synchro.js)
+}
+
+// Remplace tout le planning par celui reçu d'un autre appareil (appelée par synchro.js).
+// Pas de signalerModificationLocale() : ce n'est pas une modification à renvoyer.
+function remplacerPlanning(nouveauxCreneaux) {
+  planning = nettoyerPlanning(nouveauxCreneaux); // les créneaux invalides sont ignorés
+  ecrireDonnees(CLE_PLANNING, planning);
+  // Le créneau qu'on était en train de modifier n'existe plus : on referme le formulaire
+  if (idCreneauEnEdition !== null && !planning.some((c) => c.id === idCreneauEnEdition)) {
+    fermerFormulaireCreneau();
+  }
+  afficherPlanning();
 }
 
 // Un numéro jamais utilisé : le plus grand numéro existant + 1
