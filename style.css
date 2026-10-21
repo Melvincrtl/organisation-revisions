@@ -238,8 +238,17 @@ button {
 }
 
 .tache-actions button {
-  padding: 3px 10px;
-  font-size: 0.85rem;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+/* Sur téléphone, les boutons gardent 44 px de haut (taille confortable pour le doigt),
+   mais avec un texte plus petit et moins de marge sur les côtés */
+@media (max-width: 899px) {
+  .tache-actions button {
+    padding: 0 10px;
+  }
 }
 
 .bouton-modifier,
