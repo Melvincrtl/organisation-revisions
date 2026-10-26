@@ -145,6 +145,14 @@
       <!-- La liste est remplie par taches.js -->
       <ul id="liste-taches"></ul>
       <p id="message-vide" class="discret">Aucune tâche pour l'instant.</p>
+
+      <!-- Corbeille : les tâches faites (cochées), consultables avec ce bouton -->
+      <button type="button" id="bouton-corbeille" class="bouton-corbeille bouton-secondaire" aria-expanded="false" aria-controls="corbeille">Corbeille (0)</button>
+      <div id="corbeille" class="corbeille" hidden>
+        <ul id="liste-corbeille"></ul>
+        <p id="corbeille-vide" class="discret">Aucune tâche faite pour l'instant.</p>
+        <button type="button" id="bouton-vider-corbeille" class="bouton-danger">Vider la corbeille</button>
+      </div>
     </section>
 
     <!-- ===== Bloc : synchronisation entre appareils (géré par synchro.js) ===== -->

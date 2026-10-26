@@ -1,5 +1,7 @@
 // taches.js
 // Gère la liste de tâches : ajout, modification, case "fait", suppression, affichage.
+// Une tâche cochée (faite) quitte la liste et va dans la corbeille, d'où on peut
+// la restaurer ou la supprimer définitivement.
 
 const CLE_TACHES = "revisions-taches";
 
@@ -25,6 +27,11 @@ const caseExamen = document.getElementById("case-examen");
 const blocEcheance = document.getElementById("bloc-echeance");
 const listeTaches = document.getElementById("liste-taches");
 const messageVide = document.getElementById("message-vide");
+const boutonCorbeille = document.getElementById("bouton-corbeille");
+const corbeille = document.getElementById("corbeille");
+const listeCorbeille = document.getElementById("liste-corbeille");
+const corbeilleVide = document.getElementById("corbeille-vide");
+const boutonViderCorbeille = document.getElementById("bouton-vider-corbeille");
 const boutonAjouter = document.getElementById("bouton-ajouter");
 const boutonAnnuler = document.getElementById("bouton-annuler");
 const boutonOuvrirTache = document.getElementById("bouton-ouvrir-tache");
@@ -95,16 +102,15 @@ function remplacerTaches(nouvellesTaches) {
   rafraichirPlanning(); // planning.js
 }
 
-// Redessine toute la liste à partir du tableau "taches"
+// Redessine la liste des tâches à faire et la corbeille (tâches faites)
+// à partir du tableau "taches"
 function afficherTaches() {
-  listeTaches.innerHTML = ""; // on vide la liste avant de la reconstruire
+  listeTaches.innerHTML = "";   // on vide les deux listes avant de les reconstruire
+  listeCorbeille.innerHTML = "";
 
-  // Tri : les tâches à faire d'abord, puis par échéance la plus proche,
+  // Liste principale : seulement les tâches à faire, par échéance la plus proche,
   // et les tâches sans échéance après celles qui en ont une
-  const triees = [...taches].sort((a, b) => {
-    if (a.faite !== b.faite) {
-      return a.faite ? 1 : -1;
-    }
+  const aFaire = taches.filter((t) => !t.faite).sort((a, b) => {
     if (a.echeance === null || b.echeance === null) {
       if (a.echeance === b.echeance) {
         return 0; // toutes les deux sans échéance
@@ -113,75 +119,101 @@ function afficherTaches() {
     }
     return a.echeance.localeCompare(b.echeance);
   });
+  for (const tache of aFaire) {
+    listeTaches.append(elementTache(tache, false));
+  }
 
+  // Corbeille : les tâches faites, de la plus récemment faite à la plus ancienne
+  const faites = taches.filter((t) => t.faite).sort((a, b) => (b.faiteLe || "").localeCompare(a.faiteLe || ""));
+  for (const tache of faites) {
+    listeCorbeille.append(elementTache(tache, true));
+  }
+
+  // Messages et bouton de la corbeille
+  messageVide.hidden = aFaire.length > 0;
+  messageVide.textContent = taches.length === 0 ? "Aucune tâche pour l'instant." : "Aucune tâche à faire.";
+  boutonCorbeille.textContent = "Corbeille (" + faites.length + ")";
+  corbeilleVide.hidden = faites.length > 0;
+  boutonViderCorbeille.hidden = faites.length === 0;
+}
+
+// Une tâche affichée. "dansCorbeille" : tâche faite, avec les boutons Restaurer et Supprimer.
+function elementTache(tache, dansCorbeille) {
+  const ligne = document.createElement("li");
+  ligne.className = "tache";
   const aujourdhui = dateDuJour();
+  // Une tâche sans échéance n'est jamais en retard
+  const enRetard = !tache.faite && tache.echeance !== null && tache.echeance < aujourdhui;
+  if (tache.faite) {
+    ligne.classList.add("faite");
+  } else if (enRetard) {
+    ligne.classList.add("en-retard");
+  }
+  // "=== true" : les anciennes tâches n'ont pas de champ "examen", elles ne sont donc pas des examens
+  if (tache.examen === true) {
+    ligne.classList.add("examen");
+  }
 
-  for (const tache of triees) {
-    const ligne = document.createElement("li");
-    ligne.className = "tache";
-    // Une tâche sans échéance n'est jamais en retard
-    const enRetard = !tache.faite && tache.echeance !== null && tache.echeance < aujourdhui;
-    if (tache.faite) {
-      ligne.classList.add("faite");
-    } else if (enRetard) {
-      ligne.classList.add("en-retard");
-    }
-    // "=== true" : les anciennes tâches n'ont pas de champ "examen", elles ne sont donc pas des examens
-    if (tache.examen === true) {
-      ligne.classList.add("examen");
-    }
+  // Case à cocher "fait" (dans la corbeille, la décocher remet la tâche à faire)
+  const caseFaite = document.createElement("input");
+  caseFaite.type = "checkbox";
+  caseFaite.checked = tache.faite;
+  // Le titre dans le libellé : un lecteur d'écran sait de quelle tâche il s'agit
+  caseFaite.setAttribute("aria-label", (tache.faite ? "Remettre à faire : " : "Marquer comme faite : ") + tache.titre);
+  caseFaite.addEventListener("change", () => basculerFaite(tache.id));
 
-    // Case à cocher "fait"
-    const caseFaite = document.createElement("input");
-    caseFaite.type = "checkbox";
-    caseFaite.checked = tache.faite;
-    // Le titre dans le libellé : un lecteur d'écran sait de quelle tâche il s'agit
-    caseFaite.setAttribute("aria-label", "Marquer comme faite : " + tache.titre);
-    caseFaite.addEventListener("change", () => basculerFaite(tache.id));
+  // Titre + détails
+  const infos = document.createElement("div");
+  infos.className = "tache-infos";
 
-    // Titre + détails
-    const infos = document.createElement("div");
-    infos.className = "tache-infos";
+  const titre = document.createElement("div");
+  titre.className = "tache-titre";
+  titre.textContent = tache.titre; // textContent : le texte est affiché tel quel, sans être interprété comme du HTML
+  if (tache.examen === true) {
+    // Étiquette "EXAM" placée devant le titre
+    const badge = document.createElement("span");
+    badge.className = "badge-examen";
+    badge.textContent = "EXAM";
+    titre.prepend(badge);
+  }
 
-    const titre = document.createElement("div");
-    titre.className = "tache-titre";
-    titre.textContent = tache.titre; // textContent : le texte est affiché tel quel, sans être interprété comme du HTML
-    if (tache.examen === true) {
-      // Étiquette "EXAM" placée devant le titre
-      const badge = document.createElement("span");
-      badge.className = "badge-examen";
-      badge.textContent = "EXAM";
-      titre.prepend(badge);
-    }
+  const details = document.createElement("div");
+  details.className = "tache-details";
+  if (dansCorbeille) {
+    // Dans la corbeille : la date à laquelle la tâche a été faite
+    const quand = tache.faiteLe ? "Faite le " + formaterDate(tache.faiteLe) : "Faite";
+    details.textContent = tache.matiere + " · " + quand;
+  } else if (tache.echeance === null) {
+    details.textContent = tache.matiere + " · Sans échéance";
+  } else {
+    // Le compte à rebours ne sert que pour les tâches encore à faire
+    details.textContent = tache.matiere + " · Pour le " + formaterDate(tache.echeance) +
+      " — " + texteJoursRestants(joursRestants(tache.echeance));
+  }
 
-    const details = document.createElement("div");
-    details.className = "tache-details";
-    if (tache.echeance === null) {
-      details.textContent = tache.matiere + " · Sans échéance";
-    } else {
-      let texteEcheance = "Pour le " + formaterDate(tache.echeance);
-      if (!tache.faite) {
-        // Le compte à rebours ne sert que pour les tâches encore à faire
-        texteEcheance += " — " + texteJoursRestants(joursRestants(tache.echeance));
-      }
-      details.textContent = tache.matiere + " · " + texteEcheance;
-    }
+  infos.append(titre, details);
 
-    infos.append(titre, details);
+  // Boutons, côte à côte sous le texte
+  const actions = document.createElement("div");
+  actions.className = "tache-actions";
 
-    // Boutons modifier et supprimer, regroupés
-    const actions = document.createElement("div");
-    actions.className = "tache-actions";
+  const boutonSupprimer = document.createElement("button");
+  boutonSupprimer.className = "bouton-supprimer";
+  boutonSupprimer.textContent = "Supprimer";
+  boutonSupprimer.addEventListener("click", () => supprimerTache(tache.id));
 
+  if (dansCorbeille) {
+    // Restaurer : la tâche redevient "à faire" et revient dans la liste
+    const boutonRestaurer = document.createElement("button");
+    boutonRestaurer.className = "bouton-modifier";
+    boutonRestaurer.textContent = "Restaurer";
+    boutonRestaurer.addEventListener("click", () => basculerFaite(tache.id));
+    actions.append(boutonRestaurer, boutonSupprimer);
+  } else {
     const boutonModifier = document.createElement("button");
     boutonModifier.className = "bouton-modifier";
     boutonModifier.textContent = "Modifier";
     boutonModifier.addEventListener("click", () => commencerModification(tache.id));
-
-    const boutonSupprimer = document.createElement("button");
-    boutonSupprimer.className = "bouton-supprimer";
-    boutonSupprimer.textContent = "Supprimer";
-    boutonSupprimer.addEventListener("click", () => supprimerTache(tache.id));
 
     // Planifier : ouvre le formulaire du planning, déjà rempli avec cette tâche (planning.js)
     const boutonPlanifier = document.createElement("button");
@@ -190,13 +222,34 @@ function afficherTaches() {
     boutonPlanifier.addEventListener("click", () => planifierTache(tache.id));
 
     actions.append(boutonModifier, boutonPlanifier, boutonSupprimer);
-    ligne.append(caseFaite, infos, actions);
-    listeTaches.append(ligne);
   }
 
-  // Le message "Aucune tâche" n'apparaît que si la liste est vide
-  messageVide.hidden = taches.length > 0;
+  ligne.append(caseFaite, infos, actions);
+  return ligne;
 }
+
+// ===== Corbeille =====
+
+// Ouvre ou ferme la corbeille
+boutonCorbeille.addEventListener("click", () => {
+  const ouverte = corbeille.hidden; // elle était fermée : on l'ouvre
+  corbeille.hidden = !ouverte;
+  boutonCorbeille.setAttribute("aria-expanded", String(ouverte));
+});
+
+// Supprime définitivement toutes les tâches faites
+boutonViderCorbeille.addEventListener("click", () => {
+  const nombre = taches.filter((t) => t.faite).length;
+  if (nombre === 0 || !confirm("Supprimer définitivement " + (nombre > 1 ? "les " + nombre + " tâches faites" : "la tâche faite") + " ?")) {
+    return;
+  }
+  taches = taches.filter((t) => !t.faite);
+  if (idEnEdition !== null && !taches.some((t) => t.id === idEnEdition)) {
+    quitterModification(); // la tâche qu'on modifiait n'existe plus
+  }
+  enregistrerTaches();
+  afficherTaches();
+});
 
 // Donne un numéro jamais utilisé : le plus grand numéro existant + 1
 function nouvelId() {
